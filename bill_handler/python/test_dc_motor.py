@@ -1,61 +1,65 @@
-# motor_arrow_control_with_speed
-import keyboard
+import curses
 from gpiozero import Motor, PWMOutputDevice
 from time import sleep
 
-# Define motor with PWM speed control (adjust pins as needed)
-motor = Motor(forward=23, backward=24)
-enable_pin = PWMOutputDevice(18)  # ENA pin connected to GPIO 18 (PWM-capable)
+# Setup motor and PWM
+motor = Motor(forward=20, backward=21)
+enable_pin = PWMOutputDevice(16)
 
-speed = 0.5  # Initial speed (0.0 to 1.0)
+speed = 0.5  # Initial speed
 speed_step = 0.1
 
-def apply_speed():
+def apply_speed(stdscr):
     enable_pin.value = speed
-    print(f"[SPEED] Current speed: {speed:.1f}")
+    stdscr.addstr(2, 0, f"[SPEED] Current speed: {speed:.1f}   ")
+    stdscr.refresh()
 
-print("Use arrow keys to control the motor and speed:")
-print("→ Right: Forward\n← Left: Backward\n↓ Down: Stop")
-print("↑ Up: Increase speed\n↓ Down: Decrease speed\nESC: Quit")
+def main(stdscr):
+    global speed
+    curses.curs_set(0)  # Hide cursor
+    stdscr.nodelay(True)  # Non-blocking input
+    stdscr.clear()
+    stdscr.addstr(0, 0, "Use arrow keys to control the motor:")
+    stdscr.addstr(1, 0, "←: Backward  →: Forward  ↓: Stop")
+    stdscr.addstr(3, 0, "↑: Increase speed  ↓: Decrease speed")
+    stdscr.addstr(4, 0, "q: Quit")
+    apply_speed(stdscr)
 
-apply_speed()
+    try:
+        while True:
+            key = stdscr.getch()
 
-try:
-    while True:
-        if keyboard.is_pressed("right"):
-            motor.forward()
-            print("[FORWARD] Motor running forward")
-            sleep(0.2)
+            if key == curses.KEY_RIGHT:
+                motor.forward()
+                stdscr.addstr(5, 0, "[FORWARD] Motor running forward    ")
+            elif key == curses.KEY_LEFT:
+                motor.backward()
+                stdscr.addstr(5, 0, "[BACKWARD] Motor running backward  ")
+            elif key == curses.KEY_DOWN:
+                if speed > 0.0:
+                    speed = max(0.0, speed - speed_step)
+                    apply_speed(stdscr)
+            elif key == curses.KEY_UP:
+                if speed < 1.0:
+                    speed = min(1.0, speed + speed_step)
+                    apply_speed(stdscr)
+            elif key == ord('s'):
+                motor.stop()
+                stdscr.addstr(5, 0, "[STOP] Motor stopped               ")
+            elif key == ord('q'):
+                stdscr.addstr(6, 0, "[EXIT] Quitting...                ")
+                stdscr.refresh()
+                break
 
-        elif keyboard.is_pressed("left"):
-            motor.backward()
-            print("[BACKWARD] Motor running backward")
-            sleep(0.2)
+            stdscr.refresh()
+            sleep(0.1)
 
-        elif keyboard.is_pressed("down"):
-            motor.stop()
-            print("[STOP] Motor stopped")
-            sleep(0.2)
+    finally:
+        motor.stop()
+        enable_pin.off()
+        stdscr.addstr(7, 0, "[SHUTDOWN] Motor stopped. Press any key to exit.")
+        stdscr.nodelay(False)
+        stdscr.getch()
 
-        elif keyboard.is_pressed("up"):
-            if speed < 1.0:
-                speed = min(1.0, speed + speed_step)
-                apply_speed()
-                sleep(0.2)
-
-        elif keyboard.is_pressed("down"):
-            if speed > 0.0:
-                speed = max(0.0, speed - speed_step)
-                apply_speed()
-                sleep(0.2)
-
-        elif keyboard.is_pressed("esc"):
-            print("[EXIT] Exiting program")
-            break
-
-except KeyboardInterrupt:
-    print("\n[INTERRUPTED] Stopping motor...")
-
-finally:
-    motor.stop()
-    enable_pin.off()
+if __name__ == "__main__":
+    curses.wrapper(main)
