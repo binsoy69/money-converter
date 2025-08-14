@@ -4,8 +4,17 @@ import cv2
 import numpy as np
 from ultralytics import YOLO
 
-# Load YOLOv8 classification model
-model_path = "../bill_handler/models/uv_cls_v2.pt"  # Change to your model file name
+# Load YOLO classification model
+# Get the directory of the current script
+script_dir = os.path.dirname(os.path.abspath(__file__))
+
+# Build the absolute path to the model
+model_path = os.path.join(script_dir, '..', 'models', 'denom-cls-v2.pt')
+
+if not os.path.exists(model_path):
+    print(f"Model file not found at: {model_path}")
+    sys.exit()
+
 model = YOLO(model_path, task='classify')
 
 # Access the class labels
