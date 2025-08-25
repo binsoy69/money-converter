@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1280</width>
-    <height>800</height>
+    <height>1579</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -111,7 +111,7 @@
       <string/>
      </property>
      <property name="pixmap">
-      <pixmap>C:/Users/Asus Tuf/Documents/dondon my documents/Research/Coinnect UI/2 Icons/Coinnect Logo.png</pixmap>
+      <pixmap>images/Coinnect Logo.png</pixmap>
      </property>
      <property name="scaledContents">
       <bool>true</bool>
@@ -183,7 +183,7 @@ QPushButton:pressed {
      </property>
      <property name="icon">
       <iconset>
-       <normaloff>C:/Users/Asus Tuf/Downloads/back.png</normaloff>C:/Users/Asus Tuf/Downloads/back.png</iconset>
+       <normaloff>images/back_black.png</normaloff>images/back_black.png</iconset>
      </property>
      <property name="iconSize">
       <size>
@@ -259,7 +259,7 @@ QPushButton:pressed {
       <string/>
      </property>
      <property name="pixmap">
-      <pixmap>C:/Users/Asus Tuf/Documents/dondon my documents/Research/Coinnect UI/2 Icons/Black_coin to bill.png</pixmap>
+      <pixmap>images/bill to coinn.png</pixmap>
      </property>
      <property name="scaledContents">
       <bool>true</bool>
@@ -654,7 +654,7 @@ QToolButton:disabled {
       <string/>
      </property>
      <property name="pixmap">
-      <pixmap>C:/Users/Asus Tuf/Documents/dondon my documents/Research/Coinnect UI/2 Icons/arrow_orange.png</pixmap>
+      <pixmap>images/arrow_orange.png</pixmap>
      </property>
      <property name="scaledContents">
       <bool>true</bool>
@@ -673,7 +673,7 @@ QToolButton:disabled {
       <string/>
      </property>
      <property name="pixmap">
-      <pixmap>C:/Users/Asus Tuf/Documents/dondon my documents/Research/Coinnect UI/2 Icons/arrow_orange.png</pixmap>
+      <pixmap>images/arrow_orange.png</pixmap>
      </property>
      <property name="scaledContents">
       <bool>true</bool>
@@ -762,7 +762,7 @@ QToolButton:disabled {
       <string/>
      </property>
      <property name="pixmap">
-      <pixmap>C:/Users/Asus Tuf/Documents/dondon my documents/Research/Coinnect UI/2 Icons/arrow_orange.png</pixmap>
+      <pixmap>images/arrow_orange.png</pixmap>
      </property>
      <property name="scaledContents">
       <bool>true</bool>
@@ -882,7 +882,7 @@ QToolButton:disabled {
       <string/>
      </property>
      <property name="pixmap">
-      <pixmap>C:/Users/Asus Tuf/Documents/dondon my documents/Research/Coinnect UI/2 Icons/arrow_orange.png</pixmap>
+      <pixmap>images/arrow_orange.png</pixmap>
      </property>
      <property name="scaledContents">
       <bool>true</bool>
@@ -1100,7 +1100,7 @@ QToolButton:disabled {
       <string/>
      </property>
      <property name="pixmap">
-      <pixmap>C:/Users/Asus Tuf/Documents/dondon my documents/Research/Coinnect UI/2 Icons/question_white2.png</pixmap>
+      <pixmap>images/question_white2.png</pixmap>
      </property>
      <property name="scaledContents">
       <bool>true</bool>
@@ -1549,7 +1549,7 @@ QToolButton:pressed {
       <string/>
      </property>
      <property name="pixmap">
-      <pixmap>C:/Users/Asus Tuf/Documents/dondon my documents/Research/Coinnect UI/2 Icons/Coinnect Logo.png</pixmap>
+      <pixmap>images/Coinnect Logo.png</pixmap>
      </property>
      <property name="scaledContents">
       <bool>true</bool>
@@ -1594,7 +1594,7 @@ QPushButton:pressed {
      </property>
      <property name="icon">
       <iconset>
-       <normaloff>C:/Users/Asus Tuf/Downloads/back.png</normaloff>C:/Users/Asus Tuf/Downloads/back.png</iconset>
+       <normaloff>images/back_black.png</normaloff>images/back_black.png</iconset>
      </property>
      <property name="iconSize">
       <size>
@@ -1719,7 +1719,7 @@ QPushButton:pressed {
       <string/>
      </property>
      <property name="pixmap">
-      <pixmap>C:/Users/Asus Tuf/Documents/dondon my documents/Research/Coinnect UI/2 Icons/Black_coin to bill.png</pixmap>
+      <pixmap>images/bill to coinn.png</pixmap>
      </property>
      <property name="scaledContents">
       <bool>true</bool>
@@ -2150,7 +2150,7 @@ QProgressBar::chunk {
      </property>
      <property name="icon">
       <iconset>
-       <normaloff>C:/Users/Asus Tuf/Documents/dondon my documents/Research/Coinnect UI/2 Icons/pay.png</normaloff>C:/Users/Asus Tuf/Documents/dondon my documents/Research/Coinnect UI/2 Icons/pay.png</iconset>
+       <normaloff>images/pay.png</normaloff>images/pay.png</iconset>
      </property>
      <property name="iconSize">
       <size>
@@ -2506,7 +2506,7 @@ QProgressBar::chunk {
       <string/>
      </property>
      <property name="pixmap">
-      <pixmap>C:/Users/Asus Tuf/Documents/dondon my documents/Research/Coinnect UI/2 Icons/Coinnect Logo.png</pixmap>
+      <pixmap>images/Coinnect Logo.png</pixmap>
      </property>
      <property name="scaledContents">
       <bool>true</bool>
@@ -2610,7 +2610,7 @@ QProgressBar::chunk {
       <string/>
      </property>
      <property name="pixmap">
-      <pixmap>C:/Users/Asus Tuf/Documents/dondon my documents/Research/Coinnect UI/2 Icons/Black_coin to bill.png</pixmap>
+      <pixmap>images/bill to coinn.png</pixmap>
      </property>
      <property name="scaledContents">
       <bool>true</bool>
@@ -3251,7 +3251,7 @@ QPushButton:pressed {
      </property>
      <property name="icon">
       <iconset>
-       <normaloff>C:/Users/Asus Tuf/Downloads/back.png</normaloff>C:/Users/Asus Tuf/Downloads/back.png</iconset>
+       <normaloff>images/back_black.png</normaloff>images/back_black.png</iconset>
      </property>
      <property name="iconSize">
       <size>
@@ -3379,7 +3379,7 @@ QPushButton:pressed {
       <string/>
      </property>
      <property name="pixmap">
-      <pixmap>C:/Users/Asus Tuf/Documents/dondon my documents/Research/Coinnect UI/2 Icons/Coinnect Logo.png</pixmap>
+      <pixmap>images/Coinnect Logo.png</pixmap>
      </property>
      <property name="scaledContents">
       <bool>true</bool>
@@ -3454,7 +3454,7 @@ QPushButton:pressed {
      </property>
      <property name="icon">
       <iconset>
-       <normaloff>C:/Users/Asus Tuf/Downloads/back.png</normaloff>C:/Users/Asus Tuf/Downloads/back.png</iconset>
+       <normaloff>images/back_black.png</normaloff>images/back_black.png</iconset>
      </property>
      <property name="iconSize">
       <size>
@@ -3579,7 +3579,7 @@ QPushButton:pressed {
       <string/>
      </property>
      <property name="pixmap">
-      <pixmap>C:/Users/Asus Tuf/Documents/dondon my documents/Research/Coinnect UI/2 Icons/Black_coin to bill.png</pixmap>
+      <pixmap>images/bill to coinn.png</pixmap>
      </property>
      <property name="scaledContents">
       <bool>true</bool>
@@ -4173,7 +4173,7 @@ QProgressBar::chunk {
      </property>
      <property name="icon">
       <iconset>
-       <normaloff>C:/Users/Asus Tuf/Documents/dondon my documents/Research/Coinnect UI/2 Icons/Peso Add.png</normaloff>C:/Users/Asus Tuf/Documents/dondon my documents/Research/Coinnect UI/2 Icons/Peso Add.png</iconset>
+       <normaloff>images/Peso Add.png</normaloff>images/Peso Add.png</iconset>
      </property>
      <property name="iconSize">
       <size>
@@ -4260,7 +4260,7 @@ QProgressBar::chunk {
       <string/>
      </property>
      <property name="pixmap">
-      <pixmap>C:/Users/Asus Tuf/Documents/dondon my documents/Research/Coinnect UI/2 Icons/Insufficient.png</pixmap>
+      <pixmap>images/Insufficient.png</pixmap>
      </property>
      <property name="scaledContents">
       <bool>true</bool>
@@ -4462,7 +4462,7 @@ QToolButton:pressed {
       <string/>
      </property>
      <property name="pixmap">
-      <pixmap>C:/Users/Asus Tuf/Documents/dondon my documents/Research/Coinnect UI/2 Icons/exclamation.png</pixmap>
+      <pixmap>images/exclamation.png</pixmap>
      </property>
      <property name="scaledContents">
       <bool>true</bool>
@@ -4664,7 +4664,7 @@ QToolButton:pressed {
       <string/>
      </property>
      <property name="pixmap">
-      <pixmap>C:/Users/Asus Tuf/Documents/dondon my documents/Research/Coinnect UI/2 Icons/question_white2.png</pixmap>
+      <pixmap>images/question_white2.png</pixmap>
      </property>
      <property name="scaledContents">
       <bool>true</bool>
@@ -5620,7 +5620,7 @@ QToolButton:pressed {
       <string/>
      </property>
      <property name="pixmap">
-      <pixmap>C:/Users/Asus Tuf/Documents/dondon my documents/Research/Coinnect UI/2 Icons/checkk.png</pixmap>
+      <pixmap>images/checkk.png</pixmap>
      </property>
      <property name="scaledContents">
       <bool>true</bool>

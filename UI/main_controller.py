@@ -8,14 +8,12 @@ from coinToBill_controller import CoinBillConverter
 from billToCoin_controller import BillCoinConverter
 from billToBill_controller import BillBillConverter
 import sys
-import os
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowFlags(self.windowFlags() | Qt.FramelessWindowHint)
-        ui_path = os.path.join(os.path.dirname(__file__), "MainDesign.ui")
-        uic.loadUi(ui_path, self)
+        uic.loadUi("MainDesign.ui", self)
 
         self.current_index = 0
         self.update_button_styles(self.current_index)

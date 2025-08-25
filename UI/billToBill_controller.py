@@ -2,7 +2,6 @@ from PyQt5.QtWidgets import QWidget, QGraphicsDropShadowEffect, QMessageBox, QSt
 from PyQt5.QtCore import QTime, QDate, QTimer
 from PyQt5.QtGui import QColor
 from PyQt5 import uic
-import os
 
 class BillBillConverter(QStackedWidget):
     CLICKED_STYLE = """
@@ -34,8 +33,7 @@ class BillBillConverter(QStackedWidget):
 
     def __init__(self, parent=None, navigate=None):
         super().__init__(parent)
-        ui_path = os.path.join(os.path.dirname(__file__), "BillToBill.ui")
-        uic.loadUi(ui_path, self)
+        uic.loadUi("BillToBill.ui", self)
         self.navigate_main = navigate
         self.setCurrentIndex(0)
 

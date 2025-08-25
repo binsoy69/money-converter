@@ -182,7 +182,7 @@
         <string/>
        </property>
        <property name="pixmap">
-        <pixmap>C:/Users/Asus Tuf/Documents/dondon my documents/Research/Coinnect UI/2 Icons/Coinnect White.png</pixmap>
+        <pixmap>images/Coinnect White.png</pixmap>
        </property>
        <property name="scaledContents">
         <bool>true</bool>
@@ -253,7 +253,7 @@ QPushButton:pressed {
         <number>0</number>
        </property>
        <property name="currentIndex">
-        <number>1</number>
+        <number>0</number>
        </property>
        <widget class="QWidget" name="carousel1">
         <property name="styleSheet">
@@ -595,7 +595,7 @@ QPushButton:pressed {
         <string/>
        </property>
        <property name="pixmap">
-        <pixmap>C:/Users/Asus Tuf/Documents/dondon my documents/Research/Coinnect UI/2 Icons/Coinnect Logo.png</pixmap>
+        <pixmap>images/Coinnect Logo.png</pixmap>
        </property>
        <property name="scaledContents">
         <bool>true</bool>
@@ -703,7 +703,7 @@ Exchange</string>
        </property>
        <property name="icon">
         <iconset>
-         <normaloff>C:/Users/Asus Tuf/Documents/dondon my documents/Research/Coinnect UI/2 Icons/conversion.png</normaloff>C:/Users/Asus Tuf/Documents/dondon my documents/Research/Coinnect UI/2 Icons/conversion.png</iconset>
+         <normaloff>images/conversion.png</normaloff>images/conversion.png</iconset>
        </property>
        <property name="iconSize">
         <size>
@@ -769,7 +769,7 @@ Converter</string>
        </property>
        <property name="icon">
         <iconset>
-         <normaloff>C:/Users/Asus Tuf/Documents/dondon my documents/Research/Coinnect UI/2 Icons/currency exchange3.png</normaloff>C:/Users/Asus Tuf/Documents/dondon my documents/Research/Coinnect UI/2 Icons/currency exchange3.png</iconset>
+         <normaloff>images/currency exchange3.png</normaloff>images/currency exchange3.png</iconset>
        </property>
        <property name="iconSize">
         <size>
@@ -834,7 +834,7 @@ QToolButton:pressed {
        </property>
        <property name="icon">
         <iconset>
-         <normaloff>C:/Users/Asus Tuf/Documents/dondon my documents/Research/Coinnect UI/2 Icons/ewallet.png</normaloff>C:/Users/Asus Tuf/Documents/dondon my documents/Research/Coinnect UI/2 Icons/ewallet.png</iconset>
+         <normaloff>images/ewallet.png</normaloff>images/ewallet.png</iconset>
        </property>
        <property name="iconSize">
         <size>
@@ -891,7 +891,7 @@ QPushButton:pressed {
        </property>
        <property name="icon">
         <iconset>
-         <normaloff>C:/Users/Asus Tuf/Downloads/back.png</normaloff>C:/Users/Asus Tuf/Downloads/back.png</iconset>
+         <normaloff>images/back_black.png</normaloff>images/back_black.png</iconset>
        </property>
        <property name="iconSize">
         <size>
@@ -1050,7 +1050,7 @@ QPushButton:pressed {
         <string/>
        </property>
        <property name="pixmap">
-        <pixmap>C:/Users/Asus Tuf/Documents/dondon my documents/Research/Coinnect UI/2 Icons/Coinnect Logo.png</pixmap>
+        <pixmap>images/Coinnect Logo.png</pixmap>
        </property>
        <property name="scaledContents">
         <bool>true</bool>
@@ -1158,7 +1158,7 @@ QToolButton:pressed {
        </property>
        <property name="icon">
         <iconset>
-         <normaloff>C:/Users/Asus Tuf/Documents/dondon my documents/Research/Coinnect UI/2 Icons/1bill to coinn.png</normaloff>C:/Users/Asus Tuf/Documents/dondon my documents/Research/Coinnect UI/2 Icons/1bill to coinn.png</iconset>
+         <normaloff>images/1bill to coinn.png</normaloff>images/1bill to coinn.png</iconset>
        </property>
        <property name="iconSize">
         <size>
@@ -1215,7 +1215,7 @@ QPushButton:pressed {
        </property>
        <property name="icon">
         <iconset>
-         <normaloff>C:/Users/Asus Tuf/Downloads/back.png</normaloff>C:/Users/Asus Tuf/Downloads/back.png</iconset>
+         <normaloff>images/back_black.png</normaloff>images/back_black.png</iconset>
        </property>
        <property name="iconSize">
         <size>
@@ -1272,7 +1272,7 @@ QToolButton:pressed {
        </property>
        <property name="icon">
         <iconset>
-         <normaloff>C:/Users/Asus Tuf/Documents/dondon my documents/Research/Coinnect UI/2 Icons/3bill to bill.png</normaloff>C:/Users/Asus Tuf/Documents/dondon my documents/Research/Coinnect UI/2 Icons/3bill to bill.png</iconset>
+         <normaloff>images/3bill to bill.png</normaloff>images/3bill to bill.png</iconset>
        </property>
        <property name="iconSize">
         <size>
@@ -1338,7 +1338,7 @@ QToolButton:pressed {
        </property>
        <property name="icon">
         <iconset>
-         <normaloff>C:/Users/Asus Tuf/Documents/dondon my documents/Research/Coinnect UI/2 Icons/2coin to bill.png</normaloff>C:/Users/Asus Tuf/Documents/dondon my documents/Research/Coinnect UI/2 Icons/2coin to bill.png</iconset>
+         <normaloff>images/2coin to bill.png</normaloff>images/2coin to bill.png</iconset>
        </property>
        <property name="iconSize">
         <size>
