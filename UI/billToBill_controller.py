@@ -124,7 +124,7 @@ class BillBillConverter(QStackedWidget):
         self.converter_service_proceed.setEnabled(False)
 
         #CB Insert Coins / Progression Bar
-        self.timer_duration = 60  # seconds
+        self.timer_duration = 0  # seconds
         self.time_left = self.timer_duration
 
         self.timer = QTimer()
@@ -183,13 +183,13 @@ class BillBillConverter(QStackedWidget):
 
     #CB Update Progress bar
     def update_timer_ui(self):
+        # Calculate seconds remaining from progress steps
+        seconds_left = int(self.time_left / 10) if self.time_left > 0 else 0
+
         if self.time_left > 0:
             self.time_left -= 1
             self.cb_progressbar.setValue(self.time_left)
             self.cb_progressbar_2.setValue(self.time_left)
-
-            # Calculate seconds remaining from progress steps
-            seconds_left = int(self.time_left / 10)
             self.cb_secondsLabel.setText(f"{seconds_left}s")
             self.cb_secondsLabel_2.setText(f"{seconds_left}s")
         else:
@@ -197,20 +197,26 @@ class BillBillConverter(QStackedWidget):
             self.cb_secondsLabel.setText("Time's up!")
             self.cb_secondsLabel_2.setText(f"{seconds_left}s")
             print("[BillBillConverter] update_timer_ui() called - Timer ended")
+            # Execute the callback if provided
+            if self.on_timeout:
+                self.on_timeout()
+
 
     #CB Start Timer
-    def start_countdown(self):
+    def start_countdown(self, on_timeout=None):
+            self.on_timeout = on_timeout  # Store the callback
+            
             print("[BillBillConverter] start_countdown() called - Countdown started")
             self.time_left = self.progress_steps
             self.cb_progressbar.setValue(self.progress_steps)
             self.cb_progressbar_2.setValue(self.progress_steps)
             self.cb_secondsLabel.setText(f"{self.timer_duration}s")
             self.cb_secondsLabel_2.setText(f"{self.timer_duration}s")
-            self.timer.start(100)  # 100 ms for smoother progress
+            self.timer.start(100)  # 100 ms for smoother progress        
 
     #CB Progress Bar Load
     def setup_progressbar(self):
-        self.timer_duration = 60  # seconds
+        self.timer_duration = 10  # seconds
         self.progress_steps = self.timer_duration * 10  # 10 steps per second (100ms)
         self.time_left = self.progress_steps
 
@@ -221,6 +227,11 @@ class BillBillConverter(QStackedWidget):
         self.cb_secondsLabel.setText(f"{self.timer_duration}s")
         self.cb_secondsLabel_2.setText(f"{self.timer_duration}s")
 
+    # for stopping the timer when nagivating to another page
+    def stop_countdown(self):
+        if self.timer.isActive():
+            self.timer.stop()
+            print("[BillBillConverter] stop_countdown called - Timer manually stopped")
 
     def connect_buttons(self, buttons, slot_function):
         for btn in buttons:
@@ -346,8 +357,9 @@ class BillBillConverter(QStackedWidget):
 
     def go_to_cb_insertcoins(self, _=None):
         print("[BillBillConverter] go_to_cb_insertcoins() called - index 4")
+        self.start_countdown(on_timeout=self.go_to_cb_dashboard)
         self.navigate(4)
-        self.start_countdown()
+        
 
     def navigate(self, index):
         self.setCurrentIndex(index)
@@ -364,10 +376,14 @@ class BillBillConverter(QStackedWidget):
 
     def go_to_cb_dashboard2(self, _=None):
         print("[BillBillConverter] go_to_cb_dashboard2() called - index 3")
+        self.stop_countdown()
+        self.on_timeout = None  # Prevent auto-navigation
         self.navigate(3)
 
     def go_to_cb_dashboard(self, _=None):
         print("[BillBillConverter] go_to_cb_dashboard() called - index 7")
+        self.stop_countdown()
+        self.on_timeout = None  # Prevent auto-navigation
         self.navigate(7)
 
         # Show selected amount and fee
@@ -379,7 +395,7 @@ class BillBillConverter(QStackedWidget):
     def go_to_cb_insert(self, _=None):
         print("[BillBillConverter] go_to_cb_insert() called - index 2")
         self.navigate(2)
-        self.start_countdown()
+        self.start_countdown(on_timeout=self.reset_to_start)
 
         # Fetch total due from previous page
         total_due_text = self.cb_confirm_amount.text()  # Example: "P23"

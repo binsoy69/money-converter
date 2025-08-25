@@ -184,7 +184,6 @@ class BillCoinConverter(QStackedWidget):
             self.cb_progressbar_2.setValue(self.time_left)
 
             # Calculate seconds remaining from progress steps
-            seconds_left = int(self.time_left / 10)
             self.cb_secondsLabel.setText(f"{seconds_left}s")
             self.cb_secondsLabel_2.setText(f"{seconds_left}s")
         else:

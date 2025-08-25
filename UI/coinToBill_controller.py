@@ -125,7 +125,7 @@ class CoinBillConverter(QStackedWidget):
         self.converter_service_proceed.setEnabled(False)
 
         #CB Insert Coins / Progression Bar
-        self.timer_duration = 60  # seconds
+        self.timer_duration = 0  # seconds
         self.time_left = self.timer_duration
 
         self.timer = QTimer()
@@ -138,9 +138,6 @@ class CoinBillConverter(QStackedWidget):
         timer = QTimer(self)
         timer.timeout.connect(self.update_time)
         timer.start(1000)
-
-
-
 
     def reset_cb_current_count(self):
         print("[CoinBillConverter] reset_cb_current_count - Reset to 0")
@@ -179,19 +176,25 @@ class CoinBillConverter(QStackedWidget):
 
     #CB Update Progress bar
     def update_timer_ui(self):
+        seconds_left = int(self.time_left / 10) if self.time_left > 0 else 0
+
         if self.time_left > 0:
             self.time_left -= 1
             self.cb_progressbar.setValue(self.time_left)
 
             # Calculate seconds remaining from progress steps
-            seconds_left = int(self.time_left / 10)
             self.cb_secondsLabel.setText(f"{seconds_left}s")
         else:
             self.timer.stop()
             self.cb_secondsLabel.setText("Time's up!")
+            # Execute the callback if provided
+            if self.on_timeout:
+                self.on_timeout()
 
     #CB Start Timer
-    def start_countdown(self):
+    def start_countdown(self, on_timeout=None):
+            self.on_timeout = on_timeout
+
             self.time_left = self.progress_steps
             self.cb_progressbar.setValue(self.progress_steps)
             self.cb_secondsLabel.setText(f"{self.timer_duration}s")
@@ -200,13 +203,19 @@ class CoinBillConverter(QStackedWidget):
 
     #CB Progress Bar Load
     def setup_progressbar(self):
-        self.timer_duration = 60  # seconds
+        self.timer_duration = 10  # seconds
         self.progress_steps = self.timer_duration * 10  # 10 steps per second (100ms)
         self.time_left = self.progress_steps
 
         self.cb_progressbar.setMaximum(self.progress_steps)
         self.cb_progressbar.setValue(self.progress_steps)
         self.cb_secondsLabel.setText(f"{self.timer_duration}s")
+
+    # for stopping the timer when nagivating to another page
+    def stop_countdown(self):
+        if self.timer.isActive():
+            self.timer.stop()
+            print("[CoinBillConverter] stop_countdown called - Timer manually stopped")
 
 
 
@@ -315,6 +324,8 @@ class CoinBillConverter(QStackedWidget):
         print("[CoinBillConverter] go_back_cb_confirm - Navigated to index 1")
 
     def go_to_cb_dashboard(self, _=None):
+        self.stop_countdown()
+        self.on_timeout = None  # Prevent auto-navigation
         self.navigate(3)
 
         # Show selected amount and fee
@@ -326,7 +337,7 @@ class CoinBillConverter(QStackedWidget):
 
     def go_to_cb_insert(self, _=None):
         self.navigate(2)
-        self.start_countdown()
+        self.start_countdown(on_timeout=self.reset_to_start)
 
         # Fetch total due from previous page
         total_due_text = self.cb_confirm_due.text()  # Example: "P23"
