@@ -2,6 +2,7 @@ from PyQt5.QtWidgets import QWidget, QGraphicsDropShadowEffect, QMessageBox, QSt
 from PyQt5.QtCore import QTime, QDate, QTimer
 from PyQt5.QtGui import QColor
 from PyQt5 import uic
+import os
 
 class BillCoinConverter(QStackedWidget):
     CLICKED_STYLE = """
@@ -33,7 +34,8 @@ class BillCoinConverter(QStackedWidget):
 
     def __init__(self, parent=None, navigate=None):
         super().__init__(parent)
-        uic.loadUi("BillToCoin.ui", self)
+        ui_path = os.path.join(os.path.dirname(__file__), "BillToCoin.ui")
+        uic.loadUi(ui_path, self)
         self.navigate_main = navigate
         self.setCurrentIndex(0)
 
@@ -109,13 +111,14 @@ class BillCoinConverter(QStackedWidget):
         self.converter_trans_b2cBtn50: 50,
         self.converter_trans_b2cBtn100: 100,
         self.converter_trans_b2cBtn200: 200
-    }
+        }
+
         #CB Transaction / Proceed Button
         self.selected_button = None
         self.converter_service_proceed.setEnabled(False)
 
         #CB Insert Coins / Progression Bar
-        self.timer_duration = 60  # seconds
+        self.timer_duration = 0  # seconds
         self.time_left = self.timer_duration
 
         self.timer = QTimer()
@@ -173,6 +176,8 @@ class BillCoinConverter(QStackedWidget):
 
     #CB Update Progress bar
     def update_timer_ui(self):
+        seconds_left = int(self.time_left / 10) if self.time_left > 0 else 0
+
         if self.time_left > 0:
             self.time_left -= 1
             self.cb_progressbar.setValue(self.time_left)
@@ -187,9 +192,16 @@ class BillCoinConverter(QStackedWidget):
             self.cb_secondsLabel.setText("Time's up!")
             self.cb_secondsLabel_2.setText(f"{seconds_left}s")
             print("[BillCoinConverter] update_timer_ui called - Timer ended")
+            # Execute the callback if provided
+            if self.on_timeout:
+                self.on_timeout()
+
+            
 
     #CB Start Timer
-    def start_countdown(self):
+    def start_countdown(self, on_timeout=None):
+            self.on_timeout = on_timeout  # Store the callback
+
             self.time_left = self.progress_steps
             self.cb_progressbar.setValue(self.progress_steps)
             self.cb_progressbar_2.setValue(self.progress_steps)
@@ -200,7 +212,7 @@ class BillCoinConverter(QStackedWidget):
 
     #CB Progress Bar Load
     def setup_progressbar(self):
-        self.timer_duration = 60  # seconds
+        self.timer_duration = 10  # seconds
         self.progress_steps = self.timer_duration * 10  # 10 steps per second (100ms)
         self.time_left = self.progress_steps
 
@@ -210,6 +222,12 @@ class BillCoinConverter(QStackedWidget):
         self.cb_progressbar_2.setValue(self.progress_steps)
         self.cb_secondsLabel.setText(f"{self.timer_duration}s")
         self.cb_secondsLabel_2.setText(f"{self.timer_duration}s")
+
+    # for stopping the timer when nagivating to another page
+    def stop_countdown(self):
+        if self.timer.isActive():
+            self.timer.stop()
+            print("[BillCoinConverter] stop_countdown called - Timer manually stopped")
 
 
     def connect_buttons(self, buttons, slot_function):
@@ -325,7 +343,7 @@ class BillCoinConverter(QStackedWidget):
 
     def go_to_cb_insertcoins(self, _=None):
         self.navigate(4)
-        self.start_countdown()
+        self.start_countdown(on_timeout=self.go_to_cb_dashboard)
         print("[BillCoinConverter] go_to_cb_insertcoins called - navigating index 4")
 
     def navigate(self, index):
@@ -340,10 +358,15 @@ class BillCoinConverter(QStackedWidget):
         self.navigate(1)
 
     def go_to_cb_dashboard2(self, _=None):
+        self.stop_countdown()
+        self.on_timeout = None  # Prevent auto-navigation
         self.navigate(3)
         print("[BillCoinConverter] go_to_cb_dashboard2 called - navigating index 3")
 
     def go_to_cb_dashboard(self, _=None):
+        self.stop_countdown()
+        self.on_timeout = None  # Prevent auto-navigation
+
         self.navigate(7)
 
         # Show selected amount and fee
@@ -355,7 +378,7 @@ class BillCoinConverter(QStackedWidget):
 
     def go_to_cb_insert(self, _=None):
         self.navigate(2)
-        self.start_countdown()
+        self.start_countdown(on_timeout=self.reset_to_start)
 
         # Fetch total due from previous page
         total_due_text = self.cb_confirm_amount.text()  # Example: "P23"
