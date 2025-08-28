@@ -4,6 +4,29 @@ from PyQt5.QtGui import QColor
 from PyQt5 import uic
 import os
 
+from PyQt5.QtCore import QThread, pyqtSignal
+
+# Worker thread for handling bill verification
+class BillHandlerWorker(QThread):
+    billProcessed = pyqtSignal(bool, int)  # success, amount
+
+    def __init__(self, bill_handler):
+        super().__init__()
+        self.bill_handler = bill_handler
+        self._running = True
+
+    def run(self):
+        """Run continuously until stopped."""
+        while self._running:
+            success, amount = self.bill_handler.verify_bill()
+            self.billProcessed.emit(success, amount)
+
+    def stop(self):
+        self._running = False
+        self.quit()
+        self.wait()
+
+
 class BillCoinConverter(QStackedWidget):
     CLICKED_STYLE = """
         QToolButton {
