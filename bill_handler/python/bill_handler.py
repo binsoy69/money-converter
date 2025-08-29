@@ -4,6 +4,7 @@ import numpy as np
 import RPi.GPIO as GPIO
 from gpiozero import Motor, PWMOutputDevice, DigitalInputDevice, DistanceSensor
 from ultralytics import YOLO
+import os
 
 class BillHandler:
     def __init__(self,
@@ -57,9 +58,13 @@ class BillHandler:
 
         self.SORTER_BIN_TOLERANCE = 1.5  # ± cm
 
+        # Build the absolute path to the model
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        model_path_denom = os.path.join(script_dir, '..', 'models', 'denom-cls-v2_ncnn_model')
+        model_path_uv = os.path.join(script_dir, '..', 'models', 'uv_cls_v2_ncnn_model')
         # Load YOLO models
-        self.uv_model = YOLO("uv_cls_v2_ncnn_model", task='classify')
-        self.denom_model = YOLO("denom-cls-v2_ncnn_model", task='classify')
+        self.uv_model = YOLO(model_path_uv, task='classify')
+        self.denom_model = YOLO(model_path_denom, task='classify')
         self.uv_labels = self.uv_model.names
         self.denom_labels = self.denom_model.names
 

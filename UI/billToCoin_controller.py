@@ -2,9 +2,11 @@ from PyQt5.QtWidgets import QWidget, QGraphicsDropShadowEffect, QMessageBox, QSt
 from PyQt5.QtCore import QTime, QDate, QTimer
 from PyQt5.QtGui import QColor
 from PyQt5 import uic
-import os
-
 from PyQt5.QtCore import QThread, pyqtSignal
+import os
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from bill_handler.python.bill_handler import BillHandler   
 
 # Worker thread for handling bill verification
 class BillHandlerWorker(QThread):
@@ -285,6 +287,7 @@ class BillCoinConverter(QStackedWidget):
         self.cb_confirm_trans.setText(f"P{fee}")
         self.cb_confirm_trans_2.setText(f"P{fee}")
         self.cb_confirm_due.setText(f"P{total_due}")
+        print(f"[BillCoinConverter] User selected bill: {amount}")
 
     def convert(self, _=None):
         pass  # Conversion logic
@@ -411,6 +414,7 @@ class BillCoinConverter(QStackedWidget):
         self.cb_insert_due_2.setText(f'Total Due: {total_due_text2}')   
 
         print("[BillCoinConverter] go_to_cb_insert - Insert screen prepared")
+        print(f"[BillCoinConverter] User selected bill: {self.selected_amount}")
 
     def go_back_to_trans(self, _=None):
         self.navigate(0)
