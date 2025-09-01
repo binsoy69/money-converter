@@ -32,8 +32,8 @@ class BillHandler:
         
         # Build the absolute path to the model
         script_dir = os.path.dirname(os.path.abspath(__file__))
-        model_path_denom = os.path.join(script_dir, '..', 'models', 'denom-cls-v2.pt')
-        model_path_uv = os.path.join(script_dir, '..', 'models', 'uv_cls_v2.pt')
+        model_path_denom = os.path.join(script_dir, 'models', 'denom-cls-v2.pt')
+        model_path_uv = os.path.join(script_dir, 'models', 'uv_cls_v2.pt')
         # Load YOLO models
         self.uv_model = YOLO(model_path_uv, task='classify')
         self.denom_model = YOLO(model_path_denom, task='classify')
@@ -45,24 +45,16 @@ class BillHandler:
     # -------- Motor Logic -------- #
     def run_motor_forward(self, duration):
         print(f"[Motor] Forward {duration}s")
-        self.motor.forward()
         time.sleep(duration)
-        self.motor.stop()
 
     def run_motor_reverse(self, duration):
         print(f"[Motor] Reverse {duration}s")
-        self.motor.backward()
         time.sleep(duration)
-        self.motor.stop()
 
     # -------- Sorter Logic -------- #
     def move_stepper(self, direction=True, steps=200, delay=0.001):
-        GPIO.output(self.sorter_dir, GPIO.LOW if direction else GPIO.HIGH)
-        for _ in range(steps):
-            GPIO.output(self.sorter_step, GPIO.HIGH)
-            time.sleep(delay)
-            GPIO.output(self.sorter_step, GPIO.LOW)
-            time.sleep(delay)
+        print(f"Moving stepper {'forward' if direction else 'backward'} {steps} steps")
+        time.sleep(0.5)
 
     def get_sorter_distance(self):
         return round(self.sorter_sensor.distance * 100, 2)
@@ -74,25 +66,11 @@ class BillHandler:
 
     def align_sorter_to_bin(self, denom):
         target = self.BIN_DISTANCES.get(str(denom))
+        print(f"[Sorter] Target bin for {denom}: {target} cm")
         if target is None:
             print("[Sorter] Unknown bin.")
             return False
-
-        for _ in range(1000):
-            current = self.get_average_sorter_distance()
-            error = current - target
-
-            if abs(error) <= self.SORTER_BIN_TOLERANCE:
-                print(f"[Sorter] Aligned to {denom}")
-                return True
-
-            if error < 0:
-                self.move_stepper(direction=False, steps=100)
-            else:
-                self.move_stepper(direction=True, steps=100)
-
-        print("[Sorter] Failed to align.")
-        return False
+        time.sleep(3)
 
     # -------- Detection Logic -------- #
     def is_bill_inserted(self):
@@ -127,9 +105,7 @@ class BillHandler:
 
     def classify_denomination(self):
         print("[Classify] White light scan...")
-        GPIO.output(self.white_led_pin, GPIO.HIGH)
         frame = self.capture_image()
-        GPIO.output(self.white_led_pin, GPIO.LOW)
         if frame is None:
             return None
         label, conf = self.run_inference(self.denom_model, frame, self.denom_labels)
@@ -138,8 +114,8 @@ class BillHandler:
     # -------- Process Flow -------- #
     def process_bill(self):
         print("[BillHandler] Waiting for bill...")
-        while not self.is_bill_inserted():
-            time.sleep(0.05)
+        print("Assuming bill is inserted...")
+        time.sleep(2)
 
         print("[BillHandler] Bill detected. Feeding in...")
         self.run_motor_forward(self.forward_time)
@@ -165,4 +141,24 @@ class BillHandler:
         print("[Cleanup] Shutting down.")
         self.motor.stop()
         self.motor_speed.close()
-        GPIO.cleanup()
+
+    def verify_bill(self, amount_inserted, amount_expected):
+        """
+        Simulate bill verification.
+        Returns:
+            (success: bool, amount: int)
+        """
+        print("[BillHandler] Verifying bill...")
+        # Simulate waiting for a bill
+        import time
+        time.sleep(3)  # Simulate processing time
+
+        # Example logic: always succeed and return a fixed amount
+        # Replace this with your actual detection/authentication logic
+        success = False
+        amount = amount_inserted
+        if amount_inserted == amount_expected:
+            success = True
+
+        print(f"[BillHandler] Verification result: success={success}, amount_expected={amount_expected}, amount_inserted={amount_inserted}")
+        return success, amount

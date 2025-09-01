@@ -6,22 +6,27 @@ from PyQt5.QtCore import QThread, pyqtSignal
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from bill_handler.python.bill_handler import BillHandler   
+from demo.bill_handler import BillHandler   
 
 # Worker thread for handling bill verification
 class BillHandlerWorker(QThread):
     billProcessed = pyqtSignal(bool, int)  # success, amount
 
-    def __init__(self, bill_handler):
+    def __init__(self, amount_expected, amount_inserted=None, bill_handler=None):
         super().__init__()
-        self.bill_handler = bill_handler
+        self.bill_handler = bill_handler if bill_handler else BillHandler()
+        self.amount_expected = amount_expected
+        self.amount_inserted = amount_inserted if amount_inserted is not None else amount_expected
         self._running = True
 
     def run(self):
-        """Run continuously until stopped."""
-        while self._running:
-            success, amount = self.bill_handler.verify_bill()
-            self.billProcessed.emit(success, amount)
+        """Run once for this simulation."""
+        result = self.bill_handler.verify_bill(self.amount_inserted, self.amount_expected)
+        if isinstance(result, tuple) and len(result) == 2:
+            success, amount = result
+        else:
+            success, amount = False, 0
+        self.billProcessed.emit(success, amount)
 
     def stop(self):
         self._running = False
@@ -415,6 +420,27 @@ class BillCoinConverter(QStackedWidget):
 
         print("[BillCoinConverter] go_to_cb_insert - Insert screen prepared")
         print(f"[BillCoinConverter] User selected bill: {self.selected_amount}")
+        
+     # --- BillHandlerWorker integration ---
+        if hasattr(self, 'bill_handler_worker') and self.bill_handler_worker is not None:
+            self.bill_handler_worker.stop()
+            self.bill_handler_worker = None
+
+        # Pass the expected amount (from self.selected_amount)
+        self.bill_handler_worker = BillHandlerWorker(amount_expected=self.selected_amount, amount_inserted=100)
+        self.bill_handler_worker.billProcessed.connect(self.on_bill_processed)
+        self.bill_handler_worker.start()
+        print("[BillCoinConverter] BillHandlerWorker started for bill verification.")
+    def on_bill_processed(self, success, amount):
+        # Stop the worker after processing
+        if hasattr(self, 'bill_handler_worker') and self.bill_handler_worker is not None:
+            self.bill_handler_worker.stop()
+            self.bill_handler_worker = None
+        
+        # update the inserted bill
+        self.bc_current_count_bill.setText(str(amount))
+        print(f"[BillCoinConverter] on_bill_processed called - success: {success}, amount: {amount}")
+
 
     def go_back_to_trans(self, _=None):
         self.navigate(0)
