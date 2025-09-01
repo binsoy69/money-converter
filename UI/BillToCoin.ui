@@ -14,7 +14,7 @@
    <string>StackedWidget</string>
   </property>
   <property name="currentIndex">
-   <number>0</number>
+   <number>4</number>
   </property>
   <widget class="QWidget" name="transFrame_00">
    <widget class="QFrame" name="transactionFrame_3">
@@ -2980,10 +2980,7 @@ QToolButton:pressed {
      </property>
      <property name="font">
       <font>
-       <family>Montserrat</family>
        <pointsize>-1</pointsize>
-       <weight>75</weight>
-       <bold>true</bold>
       </font>
      </property>
      <property name="styleSheet">
@@ -3041,10 +3038,7 @@ QCheckBox::indicator:disabled {
      </property>
      <property name="font">
       <font>
-       <family>Montserrat</family>
        <pointsize>-1</pointsize>
-       <weight>75</weight>
-       <bold>true</bold>
       </font>
      </property>
      <property name="styleSheet">
@@ -3101,10 +3095,7 @@ QCheckBox::indicator:disabled {
      </property>
      <property name="font">
       <font>
-       <family>Montserrat</family>
        <pointsize>-1</pointsize>
-       <weight>75</weight>
-       <bold>true</bold>
       </font>
      </property>
      <property name="styleSheet">
@@ -3162,10 +3153,7 @@ QCheckBox::indicator:disabled {
      </property>
      <property name="font">
       <font>
-       <family>Montserrat</family>
        <pointsize>-1</pointsize>
-       <weight>75</weight>
-       <bold>true</bold>
       </font>
      </property>
      <property name="styleSheet">
@@ -3536,7 +3524,7 @@ QPushButton:pressed {
 </string>
      </property>
      <property name="text">
-      <string>Coin and Bill Coverter</string>
+      <string>Coin and Bill Converter</string>
      </property>
     </widget>
     <widget class="QLabel" name="label_164">
@@ -5579,8 +5567,8 @@ QToolButton:pressed {
     </widget>
    </widget>
   </widget>
-  <widget class="QWidget" name="successfully_dispnesed">
-   <widget class="QFrame" name="successfully_dispnesed_1">
+  <widget class="QWidget" name="successfully_dispensed">
+   <widget class="QFrame" name="successfully_dispensed_1">
     <property name="enabled">
      <bool>true</bool>
     </property>
@@ -5716,7 +5704,7 @@ QToolButton:pressed {
       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;Succesfully dispensed the money!&lt;/p&gt;&lt;p align=&quot;center&quot;&gt;Check the cash tray and receipt.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
     </widget>
-    <widget class="QToolButton" name="cb_insertCoins_proceed_2">
+    <widget class="QToolButton" name="another_transaction">
      <property name="geometry">
       <rect>
        <x>590</x>
