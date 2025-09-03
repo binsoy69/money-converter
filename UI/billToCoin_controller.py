@@ -2,37 +2,10 @@ from PyQt5.QtWidgets import QWidget, QGraphicsDropShadowEffect, QMessageBox, QSt
 from PyQt5.QtCore import QTime, QDate, QTimer
 from PyQt5.QtGui import QColor
 from PyQt5 import uic
-from PyQt5.QtCore import QThread, pyqtSignal
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from demo.bill_handler import BillHandler   
-
-# Worker thread for handling bill verification
-class BillHandlerWorker(QThread):
-    billProcessed = pyqtSignal(bool, int)  # success, amount
-
-    def __init__(self, amount_expected, amount_inserted=None, bill_handler=None):
-        super().__init__()
-        self.bill_handler = bill_handler if bill_handler else BillHandler()
-        self.amount_expected = amount_expected
-        self.amount_inserted = amount_inserted if amount_inserted is not None else amount_expected
-        self._running = True
-
-    def run(self):
-        """Run once for this simulation."""
-        result = self.bill_handler.verify_bill(self.amount_inserted, self.amount_expected)
-        if isinstance(result, tuple) and len(result) == 2:
-            success, amount = result
-        else:
-            success, amount = False, 0
-        self.billProcessed.emit(success, amount)
-
-    def stop(self):
-        self._running = False
-        self.quit()
-        self.wait()
-
+from workers.threads import * 
 
 class BillCoinConverter(QStackedWidget):
     CLICKED_STYLE = """
@@ -165,6 +138,15 @@ class BillCoinConverter(QStackedWidget):
         self.converter_trans_b2cBtn200: 200
         }
 
+        # Coin labels mapping
+        self.coin_labels = {
+            1: self.label_coin_1,
+            5: self.label_coin_5,
+            10: self.label_coin_10,
+            20: self.label_coin_20
+        }
+        
+
         self.total_amount_to_dispense = 0
         self.inserted_bill_amount = 0
         self.inserted_coin_amount = 0
@@ -205,8 +187,14 @@ class BillCoinConverter(QStackedWidget):
 
     # for resetting buttons after transaction
     def resetButtons(self):
+        # Reset selected amount and button
+        self.selected_amount = 0
         self.selected_button = None
+        self.selected_fee = 0
         self.converter_service_proceed.setEnabled(False)
+        # Reset button styles
+        for btn in self.s_amount_buttons:
+            btn.setStyleSheet(self.NORMAL_STYLE)
 
     #TIME AND DATE
     def update_time(self):
@@ -251,7 +239,7 @@ class BillCoinConverter(QStackedWidget):
 
     #Progress Bar Load
     def setup_progressbar(self):
-        self.timer_duration = 10  # seconds
+        self.timer_duration = 60  # seconds
         self.progress_steps = self.timer_duration * 10  # 10 steps per second (100ms)
         self.time_left = self.progress_steps
 
@@ -276,9 +264,10 @@ class BillCoinConverter(QStackedWidget):
         print("[BillCoinConverter] go_to_main called - navigating main index 0")
 
     def go_to_main_types(self, _=None):
+        self.resetButtons()
         if self.navigate_main:
             self.navigate_main(1)
-        print("[BillCoinConverter] go_to_main_types called - navigating main index 1")
+        print("[BillCoinConverter] go_to_main_types called - navigating main index 1 and reset selection")
 
     def go_back_to_service(self, _=None):
         if self.navigate_main:
@@ -359,6 +348,7 @@ class BillCoinConverter(QStackedWidget):
         self.stop_countdown()
         self.on_timeout = None  # Prevent auto-navigation
         self.navigate(self.PAGE_dashboardFrame)
+        self.update_dashboard_checkboxes()
         print("[BillCoinConverter] go_to_cb_dashboard2 called - navigating index 3")
 
     def go_to_cb_summary(self, _=None):
@@ -406,6 +396,8 @@ class BillCoinConverter(QStackedWidget):
     def resetLabels(self):
         self.bc_current_count_bill.setText("P0")
         self.bc_current_count_coins.setText("P0")
+        for denom in self.coin_labels.keys():
+            self.coin_labels[denom].setText("0")
 
     def update_dashboard_checkboxes(self):
         # Get displayed selected amount from the label only
@@ -423,6 +415,10 @@ class BillCoinConverter(QStackedWidget):
             self.cb_dashboard_20: 20
         }
 
+        # Clear (uncheck) all checkboxes first
+        for checkbox in checkbox_mapping.keys():
+            checkbox.setChecked(False)
+        
         # Enable only if amount <= what’s shown in the label
         for checkbox, amount in checkbox_mapping.items():
             state = (amount <= selected_amount)
@@ -490,9 +486,56 @@ class BillCoinConverter(QStackedWidget):
     # --- Coin handling logic ---
 
     def handle_coin_insertion(self):
-        # Simulate coin insertion process
-        print("[BillCoinConverter] handle_coin_insertion called")
-        self.total_amount_to_dispense = self.selected_amount  
+        # stop previous worker if any
+        if hasattr(self, 'coin_handler_worker') and self.coin_handler_worker is not None:
+            self.coin_handler_worker.stop()
+            self.coin_handler_worker = None
+
+        # expected is TOTAL VALUE in pesos
+        # billToCoin_controller.py
+        self.coin_handler_worker = CoinHandlerWorker(required_fee=self.selected_fee)
+        self.coin_handler_worker.coinInserted.connect(self.on_single_coin_inserted)
+        self.coin_handler_worker.coinsProcessed.connect(self.on_coins_processed)
+
+        # reset UI per-denomination labels and totals
+        self.coin_counts = {1: 0, 5: 0, 10: 0, 20: 0}
+        for d in self.coin_labels:
+            self.coin_labels[d].setText("0")
+        self.bc_current_count_coins.setText("P0")
+
+        self.coin_handler_worker.start()
+        print("[BillCoinConverter] CoinHandlerWorker started for coin verification.")
+
+    def on_single_coin_inserted(self, denomination, denom_count, total_value):
+        # Update the specific denom label
+        self.coin_counts[denomination] = denom_count
+        self.coin_labels[denomination].setText(str(denom_count))
+
+        # Show running TOTAL VALUE in pesos
+        self.bc_current_count_coins.setText(f"P{total_value}")
+
+        # Reset/extend the countdown on each coin
+        self.start_countdown(on_timeout=self.go_to_transFee)
+
+        print(f"[BillCoinConverter] Coin inserted: {denomination}, "
+            f"count for denom: {denom_count}, total: {total_value}")
+
+    def on_coins_processed(self, success, total_value):
+        # stop worker
+        if hasattr(self, 'coin_handler_worker') and self.coin_handler_worker is not None:
+            self.coin_handler_worker.stop()
+            self.coin_handler_worker = None
+
+        # Final total in pesos
+        self.bc_current_count_coins.setText(f"P{total_value}")
+        self.inserted_coin_amount = total_value
+        print(f"[BillCoinConverter] on_coins_processed - success={success}, total_value={total_value}")
+
+        if success:
+            QTimer.singleShot(1500, lambda: self.go_to_cb_dashboard2())
+        else:
+            self.stop_countdown()
+            QTimer.singleShot(1500, lambda: self.navigate(self.PAGE_exclamation_notequal))
 
     # TO Del
     def go_back_cb_insert(self, _=None):

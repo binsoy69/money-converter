@@ -14,7 +14,7 @@
    <string>StackedWidget</string>
   </property>
   <property name="currentIndex">
-   <number>4</number>
+   <number>7</number>
   </property>
   <widget class="QWidget" name="transFrame_00">
    <widget class="QFrame" name="transactionFrame_3">
@@ -3850,7 +3850,7 @@ QToolButton:pressed {
       <string>P1 = </string>
      </property>
     </widget>
-    <widget class="QLabel" name="label_168">
+    <widget class="QLabel" name="label_coin_1">
      <property name="geometry">
       <rect>
        <x>540</x>
@@ -3877,7 +3877,7 @@ QToolButton:pressed {
       <string>0x</string>
      </property>
     </widget>
-    <widget class="QLabel" name="label_169">
+    <widget class="QLabel" name="label_coin_5">
      <property name="geometry">
       <rect>
        <x>690</x>
@@ -3904,7 +3904,7 @@ QToolButton:pressed {
       <string>0x</string>
      </property>
     </widget>
-    <widget class="QLabel" name="label_170">
+    <widget class="QLabel" name="label_coin_10">
      <property name="geometry">
       <rect>
        <x>850</x>
@@ -4012,7 +4012,7 @@ QToolButton:pressed {
       <string>P20 = </string>
      </property>
     </widget>
-    <widget class="QLabel" name="label_174">
+    <widget class="QLabel" name="label_coin_20">
      <property name="geometry">
       <rect>
        <x>1010</x>
@@ -4194,13 +4194,13 @@ QProgressBar::chunk {
     <zorder>label_165</zorder>
     <zorder>bc_current_count_coins</zorder>
     <zorder>label_167</zorder>
-    <zorder>label_168</zorder>
-    <zorder>label_169</zorder>
-    <zorder>label_170</zorder>
+    <zorder>label_coin_1</zorder>
+    <zorder>label_coin_5</zorder>
+    <zorder>label_coin_10</zorder>
     <zorder>label_171</zorder>
     <zorder>label_172</zorder>
     <zorder>label_173</zorder>
-    <zorder>label_174</zorder>
+    <zorder>label_coin_20</zorder>
     <zorder>label_175</zorder>
     <zorder>cb_secondsLabel_2</zorder>
     <zorder>cb_progressbar_2</zorder>
