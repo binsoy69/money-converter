@@ -41,43 +41,54 @@ class BillHandlerWorker(QThread):
 # Worker thread for handling coin verification
 
 class CoinHandlerWorker(QThread):
-    coinInserted = pyqtSignal(int, int, int)   # denom, count, total_value
-    finishedWithTotal = pyqtSignal(int)        # total_value
+    # success, total_value_in_pesos
+    coinsProcessed = pyqtSignal(bool, int)
+    # denomination, count_for_that_denom, total_value_in_pesos
+    coinInserted  = pyqtSignal(int, int, int)
 
     def __init__(self, required_fee):
         super().__init__()
-        self.required_fee = required_fee
+        self.required_fee = max(0, int(required_fee))  # the transaction fee to cover
         self._running = True
-        self.coin_counts = {1: 0, 5: 0, 10: 0, 20: 0}
-        self.total_value = 0
 
     def run(self):
-        print("[CoinHandlerWorker] Started simulation")
-        while self._running and self.total_value < self.required_fee:
+        """
+        Simulate coin insertion via console:
+        - Accepts 1, 5, 10, 20
+        - Type 'done' to stop early
+        """
+        coin_counts = {1: 0, 5: 0, 10: 0, 20: 0}
+        total_value = 0
+
+        while self._running and total_value < self.required_fee:
             try:
-                raw = input(f"Insert coin (1/5/10/20) or 'done' [Total={self.total_value}]: ").strip()
+                raw = input(f"Insert coin (1/5/10/20), 'done' to finish "
+                            f"[Current total: P{total_value} / Needed: P{self.required_fee}]: ").strip().lower()
             except EOFError:
                 break
 
-            if raw.lower() in ("done", "q", "quit"):
+            if raw in ("done", "d", "q", "quit"):
                 break
 
             try:
                 denom = int(raw)
             except ValueError:
-                print("[CoinHandlerWorker] Invalid input.")
+                print("[CoinHandlerWorker] Invalid input. Use 1/5/10/20 or 'done'.")
                 continue
 
-            if denom not in self.coin_counts:
-                print("[CoinHandlerWorker] Invalid denomination.")
+            if denom not in coin_counts:
+                print("[CoinHandlerWorker] Invalid denomination. Use 1/5/10/20.")
                 continue
 
-            self.coin_counts[denom] += 1
-            self.total_value += denom
-            self.coinInserted.emit(denom, self.coin_counts[denom], self.total_value)
+            # update counts and total
+            coin_counts[denom] += 1
+            total_value += denom
 
-        # Always emit the total at the end
-        self.finishedWithTotal.emit(self.total_value)
+            # emit denomination, denom_count, and running peso total
+            self.coinInserted.emit(denom, coin_counts[denom], total_value)
+
+        success = (total_value >= self.required_fee)
+        self.coinsProcessed.emit(success, total_value)
 
     def stop(self):
         self._running = False
