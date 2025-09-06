@@ -1,23 +1,31 @@
-import time
-
 class CoinHandler:
-    def __init__(self):
-        print("[CoinHandler] Initialized.")
+    def __init__(self, required_fee):
+        self.required_fee = required_fee
         self.coin_counts = {1: 0, 5: 0, 10: 0, 20: 0}
+        self.total_value = 0
+        self._callbacks = []   # functions to call on coin insert
 
-    def verify_coins(self, coins_inserted, coins_expected):
-        """
-        Simulate coin verification.
-        Returns:
-            (success: bool, total_coins: int)
-        """
-        print("[CoinHandler] Verifying coins...")
-        time.sleep(2)  # Simulate processing time
+    def add_callback(self, callback):
+        """Register a callback to notify on each coin insertion."""
+        self._callbacks.append(callback)
 
-        success = False
-        total_coins = coins_inserted
-        if coins_inserted == coins_expected:
-            success = True
+    def insert_coin(self, denom: int):
+        """Simulate inserting a coin of given denomination."""
+        if denom not in self.coin_counts:
+            print(f"[CoinHandler] Invalid denomination: {denom}")
+            return False
 
-        print(f"[CoinHandler] Verification result: success={success}, coins_expected={coins_expected}, coins_inserted={coins_inserted}")
-        return success,
+        # Update state
+        self.coin_counts[denom] += 1
+        self.total_value += denom
+
+        # Notify listeners
+        for cb in self._callbacks:
+            cb(denom, self.coin_counts[denom], self.total_value)
+
+        # Return True if fee already reached/exceeded
+        return self.total_value >= self.required_fee
+
+    def finalize(self):
+        """Manually finalize (like user pressing 'done')."""
+        return self.total_value

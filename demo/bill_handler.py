@@ -1,164 +1,22 @@
-import cv2
-import time
-import numpy as np
-from ultralytics import YOLO
-import os
-
 class BillHandler:
-    def __init__(self,
-                 ir_sensor_pin=4,
-                 motor_in1=16,
-                 motor_in2=20,
-                 motor_pwm_pin=21,
-                 sorter_dir=24,
-                 sorter_step=25,
-                 sorter_echo=23,
-                 sorter_trig=6,
-                 white_led_pin=5,
-                 forward_time=1.5,
-                 reverse_time=1.2,
-                 motor_speed=0.9):
+    def __init__(self, selected_bill):
+        self.required_bill = selected_bill
 
-        # Assign pins and settings
-        self.forward_time = forward_time
-        self.reverse_time = reverse_time
-        self.motor_speed_value = motor_speed
-        self.white_led_pin = white_led_pin
-
-        self.sorter_step = sorter_step
-        self.sorter_dir = sorter_dir
-
-        self.SORTER_BIN_TOLERANCE = 1.5  # ± cm
-        
-        # Build the absolute path to the model
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        model_path_denom = os.path.join(script_dir, 'models', 'denom-cls-v2.pt')
-        model_path_uv = os.path.join(script_dir, 'models', 'uv_cls_v2.pt')
-        # Load YOLO models
-        self.uv_model = YOLO(model_path_uv, task='classify')
-        self.denom_model = YOLO(model_path_denom, task='classify')
-        self.uv_labels = self.uv_model.names
-        self.denom_labels = self.denom_model.names
-
-        print("[BillHandler] Initialized.")
-
-    # -------- Motor Logic -------- #
-    def run_motor_forward(self, duration):
-        print(f"[Motor] Forward {duration}s")
-        time.sleep(duration)
-
-    def run_motor_reverse(self, duration):
-        print(f"[Motor] Reverse {duration}s")
-        time.sleep(duration)
-
-    # -------- Sorter Logic -------- #
-    def move_stepper(self, direction=True, steps=200, delay=0.001):
-        print(f"Moving stepper {'forward' if direction else 'backward'} {steps} steps")
-        time.sleep(0.5)
-
-    def get_sorter_distance(self):
-        return round(self.sorter_sensor.distance * 100, 2)
-
-    def get_average_sorter_distance(self, samples=5):
-        readings = [self.get_sorter_distance() for _ in range(samples)]
-        time.sleep(0.02 * samples)
-        return round(sum(readings) / len(readings), 2)
-
-    def align_sorter_to_bin(self, denom):
-        target = self.BIN_DISTANCES.get(str(denom))
-        print(f"[Sorter] Target bin for {denom}: {target} cm")
-        if target is None:
-            print("[Sorter] Unknown bin.")
-            return False
-        time.sleep(3)
-
-    # -------- Detection Logic -------- #
-    def is_bill_inserted(self):
-        return not self.ir_sensor.value  # LOW = bill present
-
-    def capture_image(self):
-        cap = cv2.VideoCapture(0)
-        if not cap.isOpened():
-            print("[Camera] Failed to open")
-            return None
-        ret, frame = cap.read()
-        cap.release()
-        return frame if ret else None
-
-    def run_inference(self, model, frame, labels):
-        resized = cv2.resize(frame, (480, 480))
-        result = model.predict(resized, verbose=False)[0]
-        if result.probs is None:
-            return None, 0.0
-        label = labels[int(result.probs.top1)]
-        confidence = float(result.probs.top1conf)
-        print(f"[YOLO] {label} ({confidence*100:.2f}%)")
-        return label, confidence
-
-    def authenticate_bill(self):
-        print("[Auth] UV scan...")
-        frame = self.capture_image()
-        if frame is None:
-            return False
-        label, conf = self.run_inference(self.uv_model, frame, self.uv_labels)
-        return conf >= 0.8 and label == "genuine"
-
-    def classify_denomination(self):
-        print("[Classify] White light scan...")
-        frame = self.capture_image()
-        if frame is None:
-            return None
-        label, conf = self.run_inference(self.denom_model, frame, self.denom_labels)
-        return label if conf >= 0.8 else None
-
-    # -------- Process Flow -------- #
-    def process_bill(self):
-        print("[BillHandler] Waiting for bill...")
-        print("Assuming bill is inserted...")
-        time.sleep(2)
-
-        print("[BillHandler] Bill detected. Feeding in...")
-        self.run_motor_forward(self.forward_time)
-
-        if not self.authenticate_bill():
-            print("[Auth] FAKE bill. Rejecting...")
-            self.run_motor_reverse(self.reverse_time)
-            return
-
-        denom = self.classify_denomination()
-        if denom not in self.BIN_DISTANCES:
-            print("[Classify] Unknown denomination. Rejecting...")
-            self.run_motor_reverse(self.reverse_time)
-            return
-
-        print(f"[Sorter] Sorting {denom}...")
-        if self.align_sorter_to_bin(denom):
-            self.run_motor_forward(self.forward_time + 0.5)
-        else:
-            self.run_motor_reverse(self.reverse_time)
-
-    def cleanup(self):
-        print("[Cleanup] Shutting down.")
-        self.motor.stop()
-        self.motor_speed.close()
-
-    def verify_bill(self, amount_inserted, amount_expected):
+    def verify_bill(self):
         """
         Simulate bill verification.
         Returns:
-            (success: bool, amount: int)
+            (success: bool)
         """
-        print("[BillHandler] Verifying bill...")
-        # Simulate waiting for a bill
-        import time
-        time.sleep(3)  # Simulate processing time
+        raw = input("Insert bill (20/50/100/200/500/1000) or 'bad': ").strip().lower()
+        inserted_bill = int(raw)
+        if raw in ("20","50","100","200","500","1000"):
+            success = (self.required_bill is None) or (inserted_bill == int(self.required_bill))
+            return success, raw
+        elif raw in ("bad","fake"):
+            return False, "0"
+        else:
+            print("Invalid input. Try again.")
 
-        # Example logic: always succeed and return a fixed amount
-        # Replace this with your actual detection/authentication logic
-        success = False
-        amount = amount_inserted
-        if amount_inserted == amount_expected:
-            success = True
-
-        print(f"[BillHandler] Verification result: success={success}, amount_expected={amount_expected}, amount_inserted={amount_inserted}")
-        return success, amount
+        print(f"[BillHandler] Verification result: success={success}, amount_expected={self.required_bill}, amount_inserted={raw}")
+        return success, raw

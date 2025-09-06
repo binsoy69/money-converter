@@ -97,7 +97,7 @@ class BillCoinConverter(QStackedWidget):
         
         self.connect_buttons([
             self.cb_insert_proceed_3
-        ], self.go_to_cb_dashboard2)
+        ], self.on_proceed_coin_pressed)
         
         self.connect_buttons([
             self.cb_confirm_deduct
@@ -332,7 +332,7 @@ class BillCoinConverter(QStackedWidget):
         self.navigate(self.PAGE_insertCoin)
         self.start_countdown(on_timeout=self.go_to_transFee)
         print("[BillCoinConverter] go_to_cb_insertcoins called - navigating index 4")
-        self.handle_coin_insertion()
+        self.start_coin_insertion(preserve_previous=False)
     
     def go_to_transFee(self, _=None):
         self.stop_countdown()
@@ -406,6 +406,8 @@ class BillCoinConverter(QStackedWidget):
         self.total_money_inserted = 0
         self.excess_coins = 0
         self.total_amount_to_dispense = 0
+        self._coins_finalized = False
+        self.cb_insert_proceed_3.setEnabled(True)
 
     def resetLabels(self):
         self.bc_current_count_bill.setText("P0")
@@ -414,10 +416,8 @@ class BillCoinConverter(QStackedWidget):
             self.coin_labels[denom].setText("0")
 
     def update_dashboard_checkboxes(self):
-        # Get displayed selected amount from the label only
-        selected_text = self.cb_dashboard_selected.text().replace("P", "").strip()
         try:
-            selected_amount = int(selected_text)
+            selected_amount = int(self.selected_amount)
         except ValueError:
             selected_amount = 0  # Default if label is empty or invalid
 
@@ -472,98 +472,273 @@ class BillCoinConverter(QStackedWidget):
 
     # -- Bill handling logic --- 
     def handle_bill_insertion(self):
-        if hasattr(self, 'bill_handler_worker') and self.bill_handler_worker is not None:
-            self.bill_handler_worker.stop()
-            self.bill_handler_worker = None
-
-        # Start BillHandlerWorker simulation
-        self.bill_handler_worker = BillHandlerWorker()
-        self.bill_handler_worker.bill_inserted.connect(self.on_bill_inserted)
-        self.bill_handler_worker.finished.connect(self.on_bill_worker_finished)
+        self.bill_handler_worker = BillHandlerWorker(self.selected_amount)
+        self.bill_handler_worker.bill_result.connect(self.on_bill_result)
+        self.bill_handler_worker.finished.connect(self.on_bill_finished)
         self.bill_handler_worker.start()
-        print("[BillCoinConverter] BillHandlerWorker started for bill verification.")
-     
-    def on_bill_inserted(self, bill):
-        expected_bill = str(self.selected_amount)  # expected bill from earlier selection
-        self.bc_current_count_bill.setText(bill)
-        print(f"[BillCoinConverter] Simulated bill inserted: {bill}, expected: {expected_bill}")
 
-        if bill == expected_bill:
-            print("[BillCoinConverter] Correct bill inserted.")
-            self.inserted_bill_amount = int(bill)
-            self.total_money_inserted = self.inserted_bill_amount + self.inserted_coin_amount
-            print(f"[BillCoinConverter] Total money inserted updated: {self.total_money_inserted}")
-
-            # after 2 seconds, proceed to transaction fee
+    def on_bill_result(self, success, denomination):
+        self.bc_current_count_bill.setText(f"P{denomination}")
+        if success:
+            self.inserted_bill_amount = int(denomination)
+            self.total_money_inserted += self.inserted_bill_amount
+            print(f"[BillCoinConverter] Bill accepted: {denomination}, "
+                f"total_money_inserted={self.total_money_inserted}")
             QTimer.singleShot(2000, lambda: self.go_to_transFee())
         else:
-            print("[BillCoinConverter] Incorrect bill inserted.")
+            print("[BillCoinConverter] Bill rejected")
             self.stop_countdown()
-            # after 2 seconds, go to error page
             QTimer.singleShot(2000, lambda: self.navigate(self.PAGE_exclamation_notequal))
 
-    def on_bill_worker_finished(self):
-        print("[BillCoinConverter] BillHandlerWorker finished.")
+    def on_bill_finished(self):
+        print("[BillCoinConverter] Bill handler finished")
+
 
     # --- Coin handling logic ---
+    # -------------------------
+    # Call this to begin coin insertion page
+    # -------------------------
+    def start_coin_insertion(self, preserve_previous=False):
+        """
+        Start the coin insertion flow.
+        If preserve_previous == True then do NOT reset coin state (used when user retries insert again).
+        Otherwise, reset coin state for a fresh start.
+        """
+        # If fresh run, reset inserted coin state
+        if not preserve_previous:
+            # reset only coin-related fields; keep bill which was already accepted
+            self.inserted_coin_amount = 0
+            self.coin_counts = {1: 0, 5: 0, 10: 0, 20: 0}
+            # Reset UI coin labels - make sure coin_labels dict exists mapping denom->widget
+            for denom, lbl in getattr(self, "coin_labels", {}).items():
+                lbl.setText("0")
+            self.bc_current_count_coins.setText("P0")
+            self.excess_coins = 0
+            self.total_amount_to_dispense = self.inserted_bill_amount  # bill only for now
 
-    def handle_coin_insertion(self):
-        # stop previous worker if any
-        if hasattr(self, 'coin_handler_worker') and self.coin_handler_worker is not None:
-            self.coin_handler_worker.stop()
+        # ensure previous worker is stopped
+        if hasattr(self, "coin_handler_worker") and self.coin_handler_worker is not None:
+            try:
+                if self.coin_handler_worker.isRunning():
+                    self.coin_handler_worker.stop()
+            except Exception:
+                pass
             self.coin_handler_worker = None
 
-        # expected is TOTAL VALUE in pesos
-        # billToCoin_controller.py
-        self.coin_handler_worker = CoinHandlerWorker(required_fee=self.selected_fee)
+        # start new worker
+        required_fee = self.selected_fee
+        self.coin_handler_worker = CoinHandlerWorker(required_fee=required_fee)
         self.coin_handler_worker.coinInserted.connect(self.on_single_coin_inserted)
-        self.coin_handler_worker.coinsProcessed.connect(self.on_coins_processed)
-
-        # reset UI per-denomination labels and totals
-        self.coin_counts = {1: 0, 5: 0, 10: 0, 20: 0}
-        for d in self.coin_labels:
-            self.coin_labels[d].setText("0")
-        self.bc_current_count_coins.setText("P0")
-
+        self.coin_handler_worker.coinsProcessed.connect(self.on_coins_finalized)
         self.coin_handler_worker.start()
-        print("[BillCoinConverter] CoinHandlerWorker started for coin verification.")
 
+        # start UI countdown (existing helper). When timeout occurs, it will call self.on_coin_timeout()
+        self.start_countdown(on_timeout=self.on_coin_timeout)
+
+        print(f"[BillCoinConverter] Coin insertion started (preserve={preserve_previous}), required_fee=P{required_fee}")
+
+         # 🔹 Hardcoded simulation
+        QTimer.singleShot(1000, lambda: self.simulate_coins([1,1]))
+    # -------------------------
+    # Live coin update (called on every coinInserted signal)
+    # -------------------------
     def on_single_coin_inserted(self, denomination, denom_count, total_value):
-        # Update the specific denom label
+        """
+        denomination: int coin value (1/5/10/20)
+        denom_count: count of that denom
+        total_value: running total in pesos
+        """
+        # update per-denom UI
         self.coin_counts[denomination] = denom_count
-        self.coin_labels[denomination].setText(str(denom_count))
+        if hasattr(self, "coin_labels") and denomination in self.coin_labels:
+            self.coin_labels[denomination].setText(str(denom_count))
 
-        # Show running TOTAL VALUE in pesos
-        self.bc_current_count_coins.setText(f"P{total_value}")
-
-        # Reset/extend the countdown on each coin
-        self.start_countdown(on_timeout=self.go_to_transFee)
-
-        print(f"[BillCoinConverter] Coin inserted: {denomination}, "
-            f"count for denom: {denom_count}, total: {total_value}")
-
-    def on_coins_processed(self, success, total_value):
-        if hasattr(self, 'coin_handler_worker') and self.coin_handler_worker is not None:
-            self.coin_handler_worker.stop()
-            self.coin_handler_worker = None
-
-        # Final coin total
-        self.bc_current_count_coins.setText(f"P{total_value}")
+        # update running totals
         self.inserted_coin_amount = total_value
         self.total_money_inserted = self.inserted_bill_amount + self.inserted_coin_amount
-
-        # Compute excess coins (can be positive or negative)
+        # excess_coins defined as inserted_coins - fee (can be negative)
         self.excess_coins = self.inserted_coin_amount - self.selected_fee
-
-        # Total amount to dispense = total inserted + excess
         self.total_amount_to_dispense = self.selected_amount + self.excess_coins
 
-        print(f"[BillCoinConverter] on_coins_processed - coins={self.inserted_coin_amount}, "
-            f"bill={self.inserted_bill_amount}, total={self.total_money_inserted}, "
+        # update UI
+        self.bc_current_count_coins.setText(f"P{total_value}")
+
+        # restart/extend countdown on each coin insertion
+        self.start_countdown(on_timeout=self.on_coin_timeout)
+
+        print(f"[BillCoinConverter] on_single_coin_inserted: denom={denomination}, "
+            f"denom_count={denom_count}, running_total=P{total_value}, "
             f"excess_coins={self.excess_coins}, to_dispense={self.total_amount_to_dispense}")
 
-        # Always proceed regardless of success (even if < fee)
-        QTimer.singleShot(1500, lambda: self.go_to_cb_dashboard2())
+
+    # -------------------------
+    # Finalization when worker finishes naturally (reached >= fee or user typed done)
+    # -------------------------
+    def on_coins_finalized(self, total_value):
+        """
+        Called when CoinHandlerWorker finishes (natural completion).
+        total_value is final total inserted coins.
+        """
+        # ensure we stop and clear worker
+        if hasattr(self, "coin_handler_worker") and self.coin_handler_worker is not None:
+            try:
+                if self.coin_handler_worker.isRunning():
+                    self.coin_handler_worker.stop()
+            except Exception:
+                pass
+            self.coin_handler_worker = None
+
+        # update final totals (this also covers cases when total_value == 0)
+        self.inserted_coin_amount = total_value
+        self.total_money_inserted = self.inserted_bill_amount + self.inserted_coin_amount
+        self.excess_coins = self.inserted_coin_amount - self.selected_fee
+        self.total_amount_to_dispense = self.selected_amount + self.excess_coins
+
+        # UI
+        self.bc_current_count_coins.setText(f"P{total_value}")
+
+        print(f"[BillCoinConverter] on_coins_finalized - total_value=P{total_value}, "
+            f"excess_coins={self.excess_coins}, to_dispense={self.total_amount_to_dispense}")
+
+        # If user reached or exceeded fee, automatically proceed
+        if self.inserted_coin_amount >= self.selected_fee:
+            # proceed to next page (auto)
+            QTimer.singleShot(1500, lambda: self.go_to_cb_dashboard2())
+        else:
+            # still less than fee but worker done (user typed 'done' or similar):
+            # allow user to proceed explicitly; we do NOT auto-fail
+            # you can also navigate automatically to choice page if you prefer
+            print("[BillCoinConverter] Coins less than fee but worker finished - waiting for user action")
+
+
+    # -------------------------
+    # User pressed PROCEED while on coin-insert page
+    # -------------------------
+    def on_proceed_coin_pressed(self, _=None):
+        """User pressed Proceed while on coin insertion page."""
+        # 1) stop countdown and disable further timeout
+        self.stop_countdown()
+        self.on_timeout = None
+
+        # 2) prevent double-processing
+        if getattr(self, "_coins_finalized", False):
+            print("[Proceed] Coins already finalized; ignoring duplicate proceed.")
+            return
+        self._coins_finalized = True
+
+        # 3) stop worker if running (cooperative)
+        if hasattr(self, "coin_handler_worker") and self.coin_handler_worker is not None:
+            try:
+                if self.coin_handler_worker.isRunning():
+                    print("[Proceed] Stopping coin handler worker...")
+                    # request stop; don't block
+                    self.coin_handler_worker.stop()
+            except Exception as e:
+                print("[Proceed] Error stopping worker:", e)
+            finally:
+                # remove reference (worker may still be winding down but we won't wait)
+                self.coin_handler_worker = None
+
+        # 4) compute final coin total from the controller's coin_counts (authoritative)
+        total_value = sum(int(denom) * int(count) for denom, count in self.coin_counts.items())
+        self.inserted_coin_amount = total_value
+
+        # 5) core accounting (correct formulas)
+        self.total_money_inserted = int(self.inserted_bill_amount) + int(self.inserted_coin_amount)
+        self.excess_coins = int(self.inserted_coin_amount) - int(self.selected_fee)    # may be negative
+        self.total_amount_to_dispense = self.selected_amount - int(self.selected_fee)
+
+        # 6) update UI
+        self.bc_current_count_coins.setText(f"P{total_value}")
+        # optionally disable proceed button to prevent re-click
+        try:
+            self.cb_insert_proceed_3.setEnabled(False)
+        except Exception:
+            pass
+
+        print(f"[Proceed] Finalized coins=P{total_value}, "
+            f"bill=P{self.inserted_bill_amount}, fee=P{self.selected_fee}, "
+            f"excess_coins={self.excess_coins}, to_dispense=P{self.total_amount_to_dispense}")
+
+        # 7) navigate to the next page/flow (deduct or dashboard)
+        # choose whichever is your flow; commonly:
+        QTimer.singleShot(500, lambda: self.go_to_cb_dashboard2())
+
+
+
+    # -------------------------
+    # Timer timeout handling
+    # -------------------------
+    def on_coin_timeout(self):
+        """
+        Called when countdown ends while on coin insertion page.
+        If coins < required fee: automatically deduct from bill and record coins as excess.
+        If coins >= required fee: proceed normally.
+        """
+        print("[BillCoinConverter] Coin insertion timer expired - evaluating...")
+
+        # Stop the worker gracefully
+        if hasattr(self, "coin_handler_worker") and self.coin_handler_worker is not None:
+            try:
+                if self.coin_handler_worker.isRunning():
+                    self.coin_handler_worker.stop()
+            except Exception:
+                pass
+            self.coin_handler_worker = None
+
+        # Compute totals from inserted coins
+        total_value = sum(denom * count for denom, count in self.coin_counts.items())
+        self.inserted_coin_amount = total_value
+        self.total_money_inserted = self.inserted_bill_amount + self.inserted_coin_amount
+        self.excess_coins = self.inserted_coin_amount - self.selected_fee
+        self.total_amount_to_dispense = self.selected_amount + self.excess_coins
+
+        # Update UI
+        self.bc_current_count_coins.setText(f"P{total_value}")
+
+        if self.inserted_coin_amount < self.selected_fee:
+            # Not enough coins → auto deduct fee from bill
+            print("[BillCoinConverter] Timeout with insufficient coins - auto deducting fee from bill")
+
+            # Deduct flow: bill - fee, but coins are preserved as excess
+            self.excess_coins = self.inserted_coin_amount   # keep inserted coins as excess
+            self.total_amount_to_dispense = self.selected_amount - self.selected_fee + self.excess_coins
+
+            # Navigate to dashboard (same as deduct flow)
+            self.cb_dashboard_selected.setText(f"P{self.selected_amount}")
+            self.update_dashboard_checkboxes()
+            QTimer.singleShot(1000, lambda: self.navigate(self.PAGE_dashboardFrame))
+        else:
+            # Enough coins → proceed as if finalized
+            print("[BillCoinConverter] Timeout but fee covered - proceeding to dashboard")
+            QTimer.singleShot(1000, lambda: self.go_to_cb_dashboard2())
+
+        print(f"[BillCoinConverter] Timeout final state: "
+            f"coins=P{self.inserted_coin_amount}, "
+            f"bill=P{self.inserted_bill_amount}, "
+            f"fee=P{self.selected_fee}, "
+            f"excess_coins={self.excess_coins}, "
+            f"to_dispense=P{self.total_amount_to_dispense}")
+
+    def simulate_coins(self, sequence):
+        """
+        Hardcoded simulation of coin insertions.
+        sequence: list of denominations to insert sequentially.
+        """
+        if not hasattr(self, "coin_handler_worker") or self.coin_handler_worker is None:
+            print("[BillCoinConverter] No active coin handler worker!")
+            return
+
+        delay = 0
+        for denom in sequence:
+            delay += 1000  # 1 second between coins
+            QTimer.singleShot(delay, lambda d=denom: self.insert_simulated_coin(d))
+
+    def insert_simulated_coin(self, denom):
+        """Insert a simulated coin into the worker."""
+        if hasattr(self, "coin_handler_worker") and self.coin_handler_worker is not None:
+            print(f"[BillCoinConverter] Simulating coin insert: {denom}")
+            self.coin_handler_worker.insert_coin(denom)
 
 
     # TO Del
