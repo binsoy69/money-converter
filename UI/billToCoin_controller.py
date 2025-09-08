@@ -538,7 +538,7 @@ class BillCoinConverter(QStackedWidget):
         print(f"[BillCoinConverter] Coin insertion started (preserve={preserve_previous}), required_fee=P{required_fee}")
 
          # 🔹 Hardcoded simulation
-        QTimer.singleShot(1000, lambda: self.simulate_coins([1,1]))
+        QTimer.singleShot(1000, lambda: self.simulate_coins([]))
     # -------------------------
     # Live coin update (called on every coinInserted signal)
     # -------------------------
