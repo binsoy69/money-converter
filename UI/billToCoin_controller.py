@@ -258,7 +258,9 @@ class BillCoinConverter(QStackedWidget):
             print("[BillCoinConverter] stop_countdown called - Timer manually stopped")
 
     # -- Navigation Methods --
-
+    def navigate(self, index):
+        self.setCurrentIndex(index)
+        
     def go_to_main(self, _=None):
         if self.navigate_main:
             self.navigate_main(0)
@@ -392,10 +394,6 @@ class BillCoinConverter(QStackedWidget):
     def go_to_cb_dispense(self, _=None):
         self.navigate(self.PAGE_successfullyDispensed)
         print("[BillCoinConverter] go_to_cb_dispense called - navigating main index 9")
-
-    def navigate(self, index):
-        self.setCurrentIndex(index)
-
     # --- END NAVIGATION ---
 
     # --- Helper functions ---

@@ -14,7 +14,7 @@
    <string>StackedWidget</string>
   </property>
   <property name="currentIndex">
-   <number>0</number>
+   <number>3</number>
   </property>
   <widget class="QWidget" name="transFrame_00">
    <widget class="QFrame" name="transactionFrame_3">
@@ -310,7 +310,7 @@ QPushButton:pressed {
       <string/>
      </property>
      <property name="pixmap">
-      <pixmap>C:/Users/Asus Tuf/Documents/dondon my documents/Research/Coinnect UI/2 Icons/Black_coin to bill.png</pixmap>
+      <pixmap>images/Black_coin to bill.png</pixmap>
      </property>
      <property name="scaledContents">
       <bool>true</bool>
@@ -1866,7 +1866,7 @@ QToolButton:disabled {
       <string/>
      </property>
      <property name="pixmap">
-      <pixmap>C:/Users/Asus Tuf/Documents/dondon my documents/Research/Coinnect UI/2 Icons/question_white.png</pixmap>
+      <pixmap>images/question_white.png</pixmap>
      </property>
      <property name="scaledContents">
       <bool>true</bool>
@@ -2512,7 +2512,7 @@ QPushButton:pressed {
       <string/>
      </property>
      <property name="pixmap">
-      <pixmap>C:/Users/Asus Tuf/Documents/dondon my documents/Research/Coinnect UI/2 Icons/Black_coin to bill.png</pixmap>
+      <pixmap>images/Black_coin to bill.png</pixmap>
      </property>
      <property name="scaledContents">
       <bool>true</bool>
@@ -3715,10 +3715,7 @@ QToolButton:pressed {
      </property>
      <property name="font">
       <font>
-       <family>Montserrat</family>
        <pointsize>-1</pointsize>
-       <weight>75</weight>
-       <bold>true</bold>
       </font>
      </property>
      <property name="styleSheet">
@@ -3776,10 +3773,7 @@ QCheckBox::indicator:disabled {
      </property>
      <property name="font">
       <font>
-       <family>Montserrat</family>
        <pointsize>-1</pointsize>
-       <weight>75</weight>
-       <bold>true</bold>
       </font>
      </property>
      <property name="styleSheet">
@@ -3837,10 +3831,7 @@ QCheckBox::indicator:disabled {
      </property>
      <property name="font">
       <font>
-       <family>Montserrat</family>
        <pointsize>-1</pointsize>
-       <weight>75</weight>
-       <bold>true</bold>
       </font>
      </property>
      <property name="styleSheet">
@@ -3898,10 +3889,7 @@ QCheckBox::indicator:disabled {
      </property>
      <property name="font">
       <font>
-       <family>Montserrat</family>
        <pointsize>-1</pointsize>
-       <weight>75</weight>
-       <bold>true</bold>
       </font>
      </property>
      <property name="styleSheet">
@@ -4922,7 +4910,7 @@ QToolButton:pressed {
    </widget>
   </widget>
   <widget class="QWidget" name="cb_succesfully_dispensed">
-   <widget class="QFrame" name="successfully_dispnesed_1">
+   <widget class="QFrame" name="successfully_dispensed_1">
     <property name="enabled">
      <bool>true</bool>
     </property>

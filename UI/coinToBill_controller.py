@@ -31,6 +31,15 @@ class CoinBillConverter(QStackedWidget):
             border: 2px solid #FFC499;
         }
     """
+    # Page Indexes
+    PAGE_transFrame = 0
+    PAGE_confirmationFrame = 1
+    PAGE_insertFrame = 2
+    PAGE_dashboardFrame = 3
+    PAGE_cb_summary = 4
+    PAGE_insufficient = 5
+    PAGE_successfullyDispensed = 6
+    PAGE_exclamation_notequal = 7
 
     def __init__(self, parent=None, navigate=None):
         super().__init__(parent)
@@ -57,44 +66,46 @@ class CoinBillConverter(QStackedWidget):
         self.connect_buttons([
             self.converter_select_backBtn
         ], self.go_back_to_service)
+
         self.connect_buttons([
             self.converter_service_proceed
         ], self.go_to_cb_confirm)
+        
         self.connect_buttons([
             self.cb_confirm_backBtn
         ], self.go_back_to_trans)
+        
         self.connect_buttons([
             self.cb_confirm_proceed
         ], self.go_to_cb_insert)
+        
         self.connect_buttons([
             self.cb_insert_proceed
         ], self.go_to_cb_dashboard)
+        
         self.connect_buttons([
             self.cb_dashboard_proceed
         ], self.go_to_cb_summary)
+        
         self.connect_buttons([
             self.cb_summary_back
         ], self.go_back_cb_dashboard)
+        
         self.connect_buttons([
             self.cb_summary_proceed
-        ], self.go_to_cb_dispnese)
+        ], self.go_to_cb_dispense)
+        
         self.connect_buttons([
             self.cb_insertCoins_proceed_2
         ], self.go_to_main_types)
+        
         self.connect_buttons([
             self.cb_exit
         ], self.go_to_main)
 
-
-
-        #to Del
         self.connect_buttons([
-            self.converter_select_backBtn_11
-        ], self.go_back_cb_insert)
-        #to Del
-        self.connect_buttons([
-            self.converter_select_backBtn_10
-        ], self.go_back_cb_confirm)
+            self.cb_confirm_proceed_2
+        ], self.c2b_s_transaction)
 
         self.amount_fee_mapping = {
             20: 3, 40: 3,
@@ -139,41 +150,28 @@ class CoinBillConverter(QStackedWidget):
         timer.timeout.connect(self.update_time)
         timer.start(1000)
 
-    def reset_cb_current_count(self):
-        print("[CoinBillConverter] reset_cb_current_count - Reset to 0")
-        self.cb_current_count.setText("0")
+        #to Del
+        self.connect_buttons([
+            self.converter_select_backBtn_11
+        ], self.go_back_cb_insert)
+        #to Del
+        self.connect_buttons([
+            self.converter_select_backBtn_10
+        ], self.go_back_cb_confirm)
 
-    def update_cb_current_count(self, count):
-        print(f"[CoinBillConverter] update_cb_current_count - Updated count: {count}")
-        self.cb_current_count.setText(str(count))
+    # For connecting buttons to functions
+    def connect_buttons(self, buttons, slot_function):
+        for btn in buttons:
+            btn.clicked.connect(lambda checked=False, b=btn: slot_function(b))
 
-    #CB Dashboard Checkboxes
-    def update_dashboard_checkboxes(self):
-        # Get displayed selected amount (remove "P" prefix)
-        selected_text = self.cb_dashboard_selected.text().replace("P", "")
-        try:
-            selected_amount = int(selected_text)
-        except ValueError:
-            selected_amount = 0  # Default to 0 if invalid display
-
-        # Map your checkboxes to their respective amounts
-        checkbox_mapping = {
-            self.cb_dashboard_20: 20,
-            self.cb_dashboard_50: 50,
-            self.cb_dashboard_100: 100,
-            self.cb_dashboard_200: 200
-        }
-
-        # Loop through and disable or enable checkboxes
-        for checkbox, amount in checkbox_mapping.items():
-            if amount > selected_amount:
-                checkbox.setEnabled(False)
-            else:
-                checkbox.setEnabled(True)
-        
-        print(f"[CoinBillConverter] update_dashboard_checkboxes - Selected amount: {selected_amount}")
-
-
+    #TIME AND DATE
+    def update_time(self):
+        current_time = QTime.currentTime().toString("h:mm AP")
+        current_date = QDate.currentDate().toString("dddd | dd.MM.yyyy")
+        self.main_timeLabel_9.setText(current_time)
+        self.main_DateLabel_9.setText(current_date)
+    
+    # --- Timer UI ---
     #CB Update Progress bar
     def update_timer_ui(self):
         seconds_left = int(self.time_left / 10) if self.time_left > 0 else 0
@@ -217,20 +215,106 @@ class CoinBillConverter(QStackedWidget):
             self.timer.stop()
             print("[CoinBillConverter] stop_countdown called - Timer manually stopped")
 
+    # -- Navigation Methods --
+    def navigate(self, index):
+        self.setCurrentIndex(index)
 
+    def go_to_main(self, _=None):
+        if self.navigate_main:
+            self.navigate_main(0)
+        print("[CoinBillConverter] go_to_main - Navigated to Main index 0")
 
-    def connect_buttons(self, buttons, slot_function):
-        for btn in buttons:
-            btn.clicked.connect(lambda checked=False, b=btn: slot_function(b))
+    def go_to_main_types(self, _=None):
+        if self.navigate_main:
+            self.navigate_main(1)
+        print("[CoinBillConverter] go_to_main_types - Navigated to Main index 1")
 
-    def apply_shadow(self, buttons):
-        for btn in buttons:
-            shadow = QGraphicsDropShadowEffect()
-            shadow.setBlurRadius(15)
-            shadow.setXOffset(0)
-            shadow.setYOffset(3)
-            shadow.setColor(QColor(0, 0, 0, 160))
-            btn.setGraphicsEffect(shadow)
+    def go_back_to_service(self, _=None):
+        if self.navigate_main:
+            self.navigate_main(2)  # Navigate main window to index 2
+            print("[CoinBillConverter] go_back_to_service - Navigated to Main index 2")
+
+    def reset_to_start(self):
+        self.reset_transaction_state()
+        self.resetLabels()
+        self.navigate(self.PAGE_transFrame)
+        self.resetButtons()
+        print("[CoinBillConverter] reset_to_start - Reset to index 0")
+
+    def go_to_cb_confirm(self, _=None):
+        self.navigate(self.PAGE_confirmationFrame)
+        print("[CoinBillConverter] go_to_cb_confirm - Navigated to index 1")
+
+    def go_to_cb_insert(self, _=None):
+        self.navigate(self.PAGE_insertFrame)
+        self.start_countdown(on_timeout=self.reset_to_start)
+        print("[CoinBillConverter] go_to_cb_insert - Navigated to index 2 and started countdown")
+    
+    def go_to_cb_dashboard(self, _=None):
+        self.stop_countdown()
+        self.on_timeout = None  # Prevent auto-navigation
+        self.navigate(self.PAGE_dashboardFrame)
+
+        # Show selected amount and fee
+        self.cb_dashboard_selected.setText(f"P{self.selected_amount}")
+        self.cb_dashboard_tf.setText(f"P{self.selected_fee}")
+
+        self.update_dashboard_checkboxes()
+        print("[CoinBillConverter] go_to_cb_dashboard - Updated dashboard values")
+
+        # Fetch total due from previous page
+        total_due_text = self.cb_confirm_due.text()  # Example: "P23"
+
+        # Set button text with Total Due and Bold Amount
+        self.cb_insert_due.setText(f'Total Due: {total_due_text}')  
+        print("[CoinBillConverter] go_to_cb_insert - Insert screen prepared")
+    
+    def go_to_cb_summary(self, _=None):
+        self.cb_summary_transactionType.setText(self.label_140.text())
+        self.cb_summary_serviceType.setText(self.label_141.text())
+        self.cb_summary_totalMoney.setText(self.cb_dashboard_selected.text())
+        self.cb_summary_transactionFee.setText(self.cb_dashboard_tf.text())
+        self.cb_summary_moneyDispense.setText(self.cb_dashboard_selected.text())
+
+        # Denomination = collect all checked checkboxes
+        denominations = []
+        checkbox_mapping = {
+            self.cb_dashboard_20: "20",
+            self.cb_dashboard_50: "50",
+            self.cb_dashboard_100: "100",
+            self.cb_dashboard_200: "200"
+        }
+        for checkbox, label in checkbox_mapping.items():
+            if checkbox.isChecked():
+                denominations.append(label)
+
+        # Display as comma-separated (or customize formatting)
+        self.cb_summary_denomination.setText(", ".join(denominations) if denominations else "None")
+
+        # Finally, navigate to summary tab
+        self.navigate(self.PAGE_cb_summary)
+
+        print(f"[CoinBillConverter] go_to_cb_summary - Denominations: {denominations}")
+    
+    def go_to_cb_dispense(self, _=None):
+        self.navigate(self.PAGE_successfullyDispensed)
+        print("[CoinBillConverter] go_to_cb_dispense - Navigated to index 6")
+
+    def go_back_cb_dashboard(self, _=None):
+        self.navigate(self.PAGE_dashboardFrame)
+        print("[CoinBillConverter] go_back_cb_dashboard - Navigated to index 3")
+    
+    def go_back_to_trans(self, _=None):
+        self.navigate(self.PAGE_transFrame)
+        print("[CoinBillConverter] go_back_to_trans - Navigated to index 0")
+    
+    def c2b_s_transaction(self, _=None):
+        self.navigate(self.PAGE_transFrame)
+        print("[CoinBillConverter] c2b_s_transaction - Navigated to Main index 3")
+
+    def go_back_to_types(self, _=None):
+        self.navigate(1)
+        print("[CoinBillConverter] go_back_to_types - Navigated to Main index 1")
 
     # C2B Specific_Amount_Transaction / Styles
     def select_s_amount_button(self, selected_button):
@@ -256,62 +340,33 @@ class CoinBillConverter(QStackedWidget):
 
     def convert(self, _=None):
         pass  # Conversion logic
-
-    # NAVIGATIONS
-
-    def go_to_main(self, _=None):
-        if self.navigate_main:
-            self.navigate_main(0)
-        print("[CoinBillConverter] go_to_main - Navigated to Main index 0")
-
-    def go_to_main_types(self, _=None):
-        if self.navigate_main:
-            self.navigate_main(1)
-        print("[CoinBillConverter] go_to_main_types - Navigated to Main index 1")
-
-            
-    def reset_to_start(self):
-        self.setCurrentIndex(0)
-        print("[CoinBillConverter] reset_to_start - Reset to index 0")
-
-
-    def go_to_cb_dispnese(self, _=None):
-        self.navigate(6)
-        print("[CoinBillConverter] go_to_cb_dispnese - Navigated to index 6")
     
-    def go_back_cb_dashboard(self, _=None):
-        self.navigate(3)
-        print("[CoinBillConverter] go_back_cb_dashboard - Navigated to index 3")
+    #CB Dashboard Checkboxes
+    def update_dashboard_checkboxes(self):
+        # Get displayed selected amount (remove "P" prefix)
+        selected_text = self.cb_dashboard_selected.text().replace("P", "")
+        try:
+            selected_amount = int(selected_text)
+        except ValueError:
+            selected_amount = 0  # Default to 0 if invalid display
 
-    def go_to_cb_summary(self, _=None):
-        self.cb_summary_transactionType.setText(self.label_140.text())
-        self.cb_summary_serviceType.setText(self.label_141.text())
-        self.cb_summary_totalMoney.setText(self.cb_dashboard_selected.text())
-        self.cb_summary_transactionFee.setText(self.cb_dashboard_tf.text())
-        self.cb_summary_moneyDispense.setText(self.cb_dashboard_selected.text())
-
-        # Denomination = collect all checked checkboxes
-        denominations = []
+        # Map your checkboxes to their respective amounts
         checkbox_mapping = {
-            self.cb_dashboard_20: "20",
-            self.cb_dashboard_50: "50",
-            self.cb_dashboard_100: "100",
-            self.cb_dashboard_200: "200"
+            self.cb_dashboard_20: 20,
+            self.cb_dashboard_50: 50,
+            self.cb_dashboard_100: 100,
+            self.cb_dashboard_200: 200
         }
-        for checkbox, label in checkbox_mapping.items():
-            if checkbox.isChecked():
-                denominations.append(label)
 
-        # Display as comma-separated (or customize formatting)
-        self.cb_summary_denomination.setText(", ".join(denominations) if denominations else "None")
+        # Loop through and disable or enable checkboxes
+        for checkbox, amount in checkbox_mapping.items():
+            if amount > selected_amount:
+                checkbox.setEnabled(False)
+            else:
+                checkbox.setEnabled(True)
+        
+        print(f"[CoinBillConverter] update_dashboard_checkboxes - Selected amount: {selected_amount}")
 
-        # Finally, navigate to summary tab
-        self.navigate(4)
-
-        print(f"[CoinBillConverter] go_to_cb_summary - Denominations: {denominations}")
-
-    def navigate(self, index):
-        self.setCurrentIndex(index)
     
     #T0 Del
     def go_back_cb_insert(self, _=None):
@@ -322,56 +377,4 @@ class CoinBillConverter(QStackedWidget):
     def go_back_cb_confirm(self, _=None):
         self.navigate(1)
         print("[CoinBillConverter] go_back_cb_confirm - Navigated to index 1")
-
-    def go_to_cb_dashboard(self, _=None):
-        self.stop_countdown()
-        self.on_timeout = None  # Prevent auto-navigation
-        self.navigate(3)
-
-        # Show selected amount and fee
-        self.cb_dashboard_selected.setText(f"P{self.selected_amount}")
-        self.cb_dashboard_tf.setText(f"P{self.selected_fee}")
-
-        self.update_dashboard_checkboxes()
-        print("[CoinBillConverter] go_to_cb_dashboard - Updated dashboard values")
-
-    def go_to_cb_insert(self, _=None):
-        self.navigate(2)
-        self.start_countdown(on_timeout=self.reset_to_start)
-
-        # Fetch total due from previous page
-        total_due_text = self.cb_confirm_due.text()  # Example: "P23"
-
-        # Set button text with Total Due and Bold Amount
-        self.cb_insert_due.setText(f'Total Due: {total_due_text}')  
-        print("[CoinBillConverter] go_to_cb_insert - Insert screen prepared")
-
-    def go_back_to_trans(self, _=None):
-        self.navigate(0)
-        print("[CoinBillConverter] go_back_to_trans - Navigated to index 0")
-
-    def go_to_cb_confirm(self, _=None):
-        self.navigate(1)
-        print("[CoinBillConverter] go_to_cb_confirm - Navigated to index 1")
-
-    def go_back_to_service(self, _=None):
-        if self.navigate_main:
-            self.navigate_main(2)  # Navigate main window to index 2
-            print("[CoinBillConverter] go_back_to_service - Navigated to Main index 2")
-    
-    def c2b_s_transaction(self, _=None):
-        self.navigate(3)
-        print("[CoinBillConverter] c2b_s_transaction - Navigated to Main index 3")
-
-    def go_back_to_types(self, _=None):
-        self.navigate(1)
-        print("[CoinBillConverter] go_back_to_types - Navigated to Main index 1")
-
-
-    #TIME AND DATE
-    def update_time(self):
-        current_time = QTime.currentTime().toString("h:mm AP")
-        current_date = QDate.currentDate().toString("dddd | dd.MM.yyyy")
-        self.main_timeLabel_9.setText(current_time)
-        self.main_DateLabel_9.setText(current_date)
 
