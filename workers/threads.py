@@ -52,10 +52,6 @@ class CoinHandlerWorker(QThread):
 
         self.coinsProcessed.emit(self.handler.total_value)
 
-    def insert_coin(self, denom):
-        """Called externally (e.g., from UI/test) to insert a coin."""
-        return self.handler.insert_coin(denom)
-
     def stop(self):
         print("[CoinHandlerWorker] Stopping...")
         self._running = False

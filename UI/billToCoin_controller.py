@@ -10,6 +10,7 @@ from demo.coin_handler import CoinStorage
 
 # Shared coin storage instance
 coin_storage = CoinStorage(initial_count=30)
+simulated_coins =[1,1,1]
 
 class BillCoinConverter(QStackedWidget):
     CLICKED_STYLE = """
@@ -340,7 +341,6 @@ class BillCoinConverter(QStackedWidget):
     def go_to_cb_insertcoins(self, _=None):
         self.resetLabels()
         self.navigate(self.PAGE_insertCoin)
-        self.start_countdown(on_timeout=self.go_to_transFee)
         print("[BillCoinConverter] go_to_cb_insertcoins called - navigating index 4")
         self.start_coin_insertion(preserve_previous=False)
     
@@ -521,6 +521,12 @@ class BillCoinConverter(QStackedWidget):
         selected_denoms = [v for cb, v in checkbox_mapping.items() if cb.isChecked()]
         if not selected_denoms:
             selected_denoms = [20, 10, 5, 1]  # auto mode
+        # Special rule: if selected amount is exactly 20, exclude 20-peso coins
+        if self.selected_amount == 20:
+            if 20 in selected_denoms:
+                selected_denoms.remove(20)
+            print("[Convert] Rule applied: 20-peso coins excluded (selected_amount = 20).")
+
         selected_denoms = sorted(selected_denoms, reverse=True)
 
         # --- PHASE 1: SIMULATION ---
@@ -665,8 +671,8 @@ class BillCoinConverter(QStackedWidget):
 
         print(f"[BillCoinConverter] Coin insertion started (preserve={preserve_previous}), required_fee=P{required_fee}")
 
-         # 🔹 Hardcoded simulation
-        self.coin_handler_worker.handler.simulate_coins([1, 1, 1])
+        # Hardcoded simulation
+        self.coin_handler_worker.handler.simulate_coins(simulated_coins)
     # -------------------------
     # Live coin update (called on every coinInserted signal)
     # -------------------------
