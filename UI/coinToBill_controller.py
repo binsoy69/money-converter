@@ -130,10 +130,23 @@ class CoinBillConverter(QStackedWidget):
         self.converter_trans_b2bBtn160: 160,
         self.converter_trans_b2bBtn170: 170,
         self.converter_trans_b2bBtn200: 200
-    }
+        }
+
+        # Coin labels mapping
+        self.coin_labels = {
+            1: self.label_coin_1,
+            5: self.label_coin_5,
+            10: self.label_coin_10,
+            20: self.label_coin_20
+        }
+
+        self.total_amount_to_dispense = 0
+        self.inserted_coin_amount = 0
+        self.excess_coins = 0
+        self.selected_amount = 0
+        
         #CB Transaction / Proceed Button
-        self.selected_button = None
-        self.converter_service_proceed.setEnabled(False)
+        self.resetButtons()
 
         #CB Insert Coins / Progression Bar
         self.timer_duration = 0  # seconds
@@ -163,6 +176,11 @@ class CoinBillConverter(QStackedWidget):
     def connect_buttons(self, buttons, slot_function):
         for btn in buttons:
             btn.clicked.connect(lambda checked=False, b=btn: slot_function(b))
+
+    def resetButtons(self):
+        #CB Transaction / Proceed Button
+        self.selected_button = None
+        self.converter_service_proceed.setEnabled(False)
 
     #TIME AND DATE
     def update_time(self):
@@ -315,8 +333,24 @@ class CoinBillConverter(QStackedWidget):
     def go_back_to_types(self, _=None):
         self.navigate(1)
         print("[CoinBillConverter] go_back_to_types - Navigated to Main index 1")
+    # --- END NAVIGATION ---
 
+    # --- Helper functions ---
     # C2B Specific_Amount_Transaction / Styles
+    def reset_transaction_state(self):
+        self.selected_button = None
+        self.selected_amount = 0
+        self.selected_fee = 0
+        self.converter_service_proceed.setEnabled(False)
+        for btn in self.s_amount_buttons:
+            btn.setStyleSheet(self.NORMAL_STYLE)
+        print("[CoinBillConverter] reset_transaction_state - Transaction state reset")
+    
+    def resetLabels(self):
+        self.cb_current_count.setText("P0")
+        for denom in self.coin_labels.keys():
+            self.coin_labels[denom].setText("0")
+
     def select_s_amount_button(self, selected_button):
         self.selected_button = selected_button
         self.converter_service_proceed.setEnabled(True)

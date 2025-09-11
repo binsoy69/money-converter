@@ -8,3 +8,4 @@ n.vscode
 n*.avi
 n*.mp4
 venv/
+*json

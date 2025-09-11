@@ -14,7 +14,7 @@
    <string>StackedWidget</string>
   </property>
   <property name="currentIndex">
-   <number>3</number>
+   <number>2</number>
   </property>
   <widget class="QWidget" name="transFrame_00">
    <widget class="QFrame" name="transactionFrame_3">
@@ -2795,7 +2795,7 @@ QToolButton:pressed {
       <string>P1 = </string>
      </property>
     </widget>
-    <widget class="QLabel" name="label_129">
+    <widget class="QLabel" name="label_coin_1">
      <property name="geometry">
       <rect>
        <x>530</x>
@@ -2822,7 +2822,7 @@ QToolButton:pressed {
       <string>0x</string>
      </property>
     </widget>
-    <widget class="QLabel" name="label_130">
+    <widget class="QLabel" name="label_coin_5">
      <property name="geometry">
       <rect>
        <x>680</x>
@@ -2849,7 +2849,7 @@ QToolButton:pressed {
       <string>0x</string>
      </property>
     </widget>
-    <widget class="QLabel" name="label_131">
+    <widget class="QLabel" name="label_coin_10">
      <property name="geometry">
       <rect>
        <x>840</x>
@@ -2957,7 +2957,7 @@ QToolButton:pressed {
       <string>P20 = </string>
      </property>
     </widget>
-    <widget class="QLabel" name="label_135">
+    <widget class="QLabel" name="label_coin_20">
      <property name="geometry">
       <rect>
        <x>1000</x>
@@ -3106,7 +3106,7 @@ QProgressBar::chunk {
      </property>
      <property name="icon">
       <iconset>
-       <normaloff>C:/Users/Asus Tuf/Documents/dondon my documents/Research/Coinnect UI/2 Icons/Peso Add.png</normaloff>C:/Users/Asus Tuf/Documents/dondon my documents/Research/Coinnect UI/2 Icons/Peso Add.png</iconset>
+       <normaloff>images/Peso Add.png</normaloff>images/Peso Add.png</iconset>
      </property>
      <property name="iconSize">
       <size>
@@ -3139,13 +3139,13 @@ QProgressBar::chunk {
     <zorder>cb_insert_proceed</zorder>
     <zorder>label_126</zorder>
     <zorder>label_128</zorder>
-    <zorder>label_129</zorder>
-    <zorder>label_130</zorder>
-    <zorder>label_131</zorder>
+    <zorder>label_coin_1</zorder>
+    <zorder>label_coin_5</zorder>
+    <zorder>label_coin_10</zorder>
     <zorder>label_132</zorder>
     <zorder>label_133</zorder>
     <zorder>label_134</zorder>
-    <zorder>label_135</zorder>
+    <zorder>label_coin_20</zorder>
     <zorder>label_136</zorder>
     <zorder>cb_secondsLabel</zorder>
     <zorder>cb_progressbar</zorder>

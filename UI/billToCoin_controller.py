@@ -5,7 +5,11 @@ from PyQt5 import uic
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from workers.threads import * 
+from workers.threads import *
+from demo.coin_handler import CoinStorage
+
+# Shared coin storage instance
+coin_storage = CoinStorage(initial_count=30)
 
 class BillCoinConverter(QStackedWidget):
     CLICKED_STYLE = """
@@ -121,6 +125,10 @@ class BillCoinConverter(QStackedWidget):
         
         self.connect_buttons([
             self.cb_exit
+        ], self.go_to_main)
+
+        self.connect_buttons([
+            self.cb_confirm_proceed_2
         ], self.go_to_main)
 
         self.amount_fee_mapping = {
@@ -392,8 +400,13 @@ class BillCoinConverter(QStackedWidget):
         print("[BillCoinConverter] go_back_cb_db called - navigating index 3")
     
     def go_to_cb_dispense(self, _=None):
-        self.navigate(self.PAGE_successfullyDispensed)
-        print("[BillCoinConverter] go_to_cb_dispense called - navigating main index 9")
+        if (self.convert_bill_to_coin()):
+              # Perform conversion and show breakdown
+            self.navigate(self.PAGE_successfullyDispensed)
+            print("[BillCoinConverter] go_to_cb_dispense called - navigating main index 9")
+        else:
+            print("[BillCoinConverter] go_to_cb_dispense called - conversion failed")
+            self.navigate(self.PAGE_insufficient)
     # --- END NAVIGATION ---
 
     # --- Helper functions ---
@@ -406,6 +419,17 @@ class BillCoinConverter(QStackedWidget):
         self.total_amount_to_dispense = 0
         self._coins_finalized = False
         self.cb_insert_proceed_3.setEnabled(True)
+        
+        checkbox_mapping = {
+        self.cb_dashboard_1: 1,
+        self.cb_dashboard_5: 5,
+        self.cb_dashboard_10: 10,
+        self.cb_dashboard_20: 20
+        }
+
+        for cb in checkbox_mapping.keys():
+            cb.setChecked(False)   # uncheck
+            cb.setEnabled(True)    # re-enable
 
     def resetLabels(self):
         self.bc_current_count_bill.setText("P0")
@@ -414,8 +438,10 @@ class BillCoinConverter(QStackedWidget):
             self.coin_labels[denom].setText("0")
 
     def update_dashboard_checkboxes(self):
+        # Get displayed selected amount from the label only
+        selected_text = self.cb_dashboard_selected.text().replace("P", "").strip()
         try:
-            selected_amount = int(self.selected_amount)
+            selected_amount = int(selected_text)
         except ValueError:
             selected_amount = 0  # Default if label is empty or invalid
 
@@ -427,21 +453,30 @@ class BillCoinConverter(QStackedWidget):
             self.cb_dashboard_20: 20
         }
 
-        # Clear (uncheck) all checkboxes first
-        for checkbox in checkbox_mapping.keys():
-            checkbox.setChecked(False)
-        
-        # Enable only if amount <= what’s shown in the label
+        # Get latest storage state
+        current_storage = coin_storage.get_storage()
+
         for checkbox, amount in checkbox_mapping.items():
-            state = (amount <= selected_amount)
+            # Rule 1: Enable only if denom <= selected amount
+            allowed_by_amount = amount <= selected_amount
 
-            # Special rule: if user inserted 20 bill, disable 20 coin
-            if self.inserted_bill_amount == 20 and amount == 20:
-                state = False
+            # Rule 2: Enable only if storage >= 5
+            allowed_by_storage = current_storage.get(amount, 0) >= 5
 
-            checkbox.setEnabled(state)
+            if allowed_by_amount and allowed_by_storage:
+                checkbox.setEnabled(True)
+            else:
+                checkbox.setEnabled(False)
+                checkbox.setChecked(False)  # uncheck if disabled
 
-        print(f"[CoinBillConverter] update_dashboard_checkboxes - Selected amount: {selected_amount}")
+        # Additional rule: If selected amount is exactly 20, disable 20-peso checkbox
+        if selected_amount == 20:
+            self.cb_dashboard_20.setEnabled(False)
+            self.cb_dashboard_20.setChecked(False)
+            print("[UI] Disabled 20-peso checkbox (selected amount = 20).")
+
+        print(f"[BillCoinConverter] update_dashboard_checkboxes - "
+              f"Selected amount: {selected_amount}, Storage: {current_storage}")
 
     # C2B Specific_Amount_Transaction / Styles
     def select_s_amount_button(self, selected_button):
@@ -465,8 +500,105 @@ class BillCoinConverter(QStackedWidget):
         self.cb_confirm_due.setText(f"P{total_due}")
         print(f"[BillCoinConverter] User selected bill: {amount}")
 
-    def convert(self, _=None):
-        pass  # Conversion logic
+    def convert_bill_to_coin(self, _=None):
+        success = True
+        """Convert total_amount_to_dispense into coin breakdown with simulation first."""
+
+        amount = self.total_amount_to_dispense
+        if amount <= 0:
+            print("[Convert] Nothing to dispense.")
+            return
+
+        # Map checkboxes to denominations
+        checkbox_mapping = {
+            self.cb_dashboard_1: 1,
+            self.cb_dashboard_5: 5,
+            self.cb_dashboard_10: 10,
+            self.cb_dashboard_20: 20
+        }
+
+        # Get selected denominations
+        selected_denoms = [v for cb, v in checkbox_mapping.items() if cb.isChecked()]
+        if not selected_denoms:
+            selected_denoms = [20, 10, 5, 1]  # auto mode
+        selected_denoms = sorted(selected_denoms, reverse=True)
+
+        # --- PHASE 1: SIMULATION ---
+        def simulate_dispense(denoms, amount, storage):
+            """Try to simulate dispensing with given denoms and storage copy."""
+            breakdown = {}
+            remaining = amount
+
+            if len(denoms) == 1:  # Single denom → greedy then fallback
+                denom = denoms[0]
+                # Use as many as possible of the selected denom
+                count_needed = remaining // denom
+                can_use = min(count_needed, storage.get(denom, 0))
+                if can_use > 0:
+                    breakdown[denom] = can_use
+                    remaining -= can_use * denom
+                    storage[denom] -= can_use
+
+                # Fallback to smaller denoms
+                for smaller in [d for d in [20, 10, 5, 1] if d < denom]:
+                    count_needed = remaining // smaller
+                    can_use = min(count_needed, storage.get(smaller, 0))
+                    if can_use > 0:
+                        breakdown[smaller] = breakdown.get(smaller, 0) + can_use
+                        remaining -= can_use * smaller
+                        storage[smaller] -= can_use
+
+            else:  # Multiple denoms → fair distribution
+                while remaining > 0 and any(storage[d] > 0 for d in denoms):
+                    progress = False
+                    for denom in denoms:
+                        if remaining >= denom and storage.get(denom, 0) > 0:
+                            breakdown[denom] = breakdown.get(denom, 0) + 1
+                            remaining -= denom
+                            storage[denom] -= 1
+                            progress = True
+                        if remaining <= 0:
+                            break
+                    if not progress:
+                        break
+
+                # Fallback if still remainder
+                if remaining > 0:
+                    for denom in [20, 10, 5, 1]:
+                        while remaining >= denom and storage.get(denom, 0) > 0:
+                            breakdown[denom] = breakdown.get(denom, 0) + 1
+                            remaining -= denom
+                            storage[denom] -= 1
+
+            return breakdown, remaining
+
+        # Copy of storage for simulation
+        current_storage = coin_storage.get_storage()
+        sim_storage = current_storage.copy()
+
+        # Try simulation with selected denoms
+        breakdown, remaining = simulate_dispense(selected_denoms, amount, sim_storage)
+
+        if remaining > 0:
+            print(f"[Convert] Not enough coins with selected denoms. Remainder={remaining}. Trying AUTO...")
+            sim_storage = current_storage.copy()
+            breakdown, remaining = simulate_dispense([20, 10, 5, 1], amount, sim_storage)
+
+        # If still remainder → fail
+        if remaining > 0:
+            print(f"[Convert] ERROR: Cannot dispense {amount}. Not enough coins in storage.")
+            return False
+
+        # --- PHASE 2: ACTUAL DISPENSE ---
+        print(f"[Convert] Dispensing for amount {amount}:")
+        for denom, count in breakdown.items():
+            dispensed = coin_storage.dispense(denom, count)  # real dispense
+            print(f"  {denom}: {dispensed}")
+
+        print("[Convert] Remaining storage:", coin_storage.get_storage())
+        return success
+
+
 
     # -- Bill handling logic --- 
     def handle_bill_insertion(self):
@@ -536,7 +668,7 @@ class BillCoinConverter(QStackedWidget):
         print(f"[BillCoinConverter] Coin insertion started (preserve={preserve_previous}), required_fee=P{required_fee}")
 
          # 🔹 Hardcoded simulation
-        QTimer.singleShot(1000, lambda: self.simulate_coins([]))
+        QTimer.singleShot(1000, lambda: self.simulate_coins([1,1,1]))
     # -------------------------
     # Live coin update (called on every coinInserted signal)
     # -------------------------
