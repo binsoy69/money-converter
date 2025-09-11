@@ -1,5 +1,6 @@
 import json
 import os
+from PyQt5.QtCore import QTimer
 class CoinHandler:
     def __init__(self, required_fee):
         self.required_fee = required_fee
@@ -27,10 +28,24 @@ class CoinHandler:
 
         # Return True if fee already reached/exceeded
         return self.total_value >= self.required_fee
+    
+    def simulate_coins(self, sequence, interval=1000):
+        """
+        Simulate inserting a sequence of coins with a delay (ms).
+        """
+        delay = 0
+        for denom in sequence:
+            delay += interval
+            QTimer.singleShot(delay, lambda d=denom: self.insert_coin(d))
 
     def finalize(self):
         """Manually finalize (like user pressing 'done')."""
         return self.total_value
+    
+    def is_sufficient(self):
+        """Check if inserted coins meet or exceed the required fee."""
+        return self.total_value >= self.required_fee
+
 
 class CoinStorage:
     def __init__(self, initial_count=30, storage_file="coin_storage.json"):

@@ -598,8 +598,6 @@ class BillCoinConverter(QStackedWidget):
         print("[Convert] Remaining storage:", coin_storage.get_storage())
         return success
 
-
-
     # -- Bill handling logic --- 
     def handle_bill_insertion(self):
         self.bill_handler_worker = BillHandlerWorker(self.selected_amount)
@@ -668,7 +666,7 @@ class BillCoinConverter(QStackedWidget):
         print(f"[BillCoinConverter] Coin insertion started (preserve={preserve_previous}), required_fee=P{required_fee}")
 
          # 🔹 Hardcoded simulation
-        QTimer.singleShot(1000, lambda: self.simulate_coins([1,1,1]))
+        self.coin_handler_worker.handler.simulate_coins([1, 1, 1])
     # -------------------------
     # Live coin update (called on every coinInserted signal)
     # -------------------------
@@ -849,26 +847,6 @@ class BillCoinConverter(QStackedWidget):
             f"fee=P{self.selected_fee}, "
             f"excess_coins={self.excess_coins}, "
             f"to_dispense=P{self.total_amount_to_dispense}")
-
-    def simulate_coins(self, sequence):
-        """
-        Hardcoded simulation of coin insertions.
-        sequence: list of denominations to insert sequentially.
-        """
-        if not hasattr(self, "coin_handler_worker") or self.coin_handler_worker is None:
-            print("[BillCoinConverter] No active coin handler worker!")
-            return
-
-        delay = 0
-        for denom in sequence:
-            delay += 1000  # 1 second between coins
-            QTimer.singleShot(delay, lambda d=denom: self.insert_simulated_coin(d))
-
-    def insert_simulated_coin(self, denom):
-        """Insert a simulated coin into the worker."""
-        if hasattr(self, "coin_handler_worker") and self.coin_handler_worker is not None:
-            print(f"[BillCoinConverter] Simulating coin insert: {denom}")
-            self.coin_handler_worker.insert_coin(denom)
 
 
     # TO Del
