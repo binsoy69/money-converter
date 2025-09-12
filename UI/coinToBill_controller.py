@@ -7,8 +7,10 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from workers.threads import *
 from demo.coin_handler import CoinStorage
+from demo.coin_to_bill_converter import convert_coins_to_bills
 
-simulated_coins = [1, 1, 1]
+
+simulated_coins = [10,5,5,5]
 class CoinBillConverter(QStackedWidget):
     CLICKED_STYLE = """
         QToolButton {
@@ -98,7 +100,7 @@ class CoinBillConverter(QStackedWidget):
         
         self.connect_buttons([
             self.cb_summary_proceed
-        ], self.go_to_cb_dispense)
+        ], self.convert_coin_to_bill)
         
         self.connect_buttons([
             self.cb_insertCoins_proceed_2
@@ -271,6 +273,12 @@ class CoinBillConverter(QStackedWidget):
 
     def go_to_cb_insert(self, _=None):
         self.navigate(self.PAGE_insertFrame)
+        # Fetch total due from previous page
+        total_due_text = self.cb_confirm_due.text()  # Example: "P23"
+
+        # Set button text with Total Due and Bold Amount
+        self.cb_insert_due.setText(f'Total Due: {total_due_text}')  
+        print("[CoinBillConverter] go_to_cb_insert - Insert screen prepared")
         print("[CoinBillConverter] go_to_cb_insert - Navigated to index 2 and started countdown")
         self.required_amount = self.selected_fee + self.selected_amount
         self.start_coin_insertion(self.required_amount)
@@ -287,19 +295,13 @@ class CoinBillConverter(QStackedWidget):
         self.update_dashboard_checkboxes()
         print("[CoinBillConverter] go_to_cb_dashboard - Updated dashboard values")
 
-        # Fetch total due from previous page
-        total_due_text = self.cb_confirm_due.text()  # Example: "P23"
-
-        # Set button text with Total Due and Bold Amount
-        self.cb_insert_due.setText(f'Total Due: {total_due_text}')  
-        print("[CoinBillConverter] go_to_cb_insert - Insert screen prepared")
     
     def go_to_cb_summary(self, _=None):
         self.cb_summary_transactionType.setText(self.label_140.text())
         self.cb_summary_serviceType.setText(self.label_141.text())
-        self.cb_summary_totalMoney.setText(self.cb_dashboard_selected.text())
+        self.cb_summary_totalMoney.setText(str(self.total_money_inserted))
         self.cb_summary_transactionFee.setText(self.cb_dashboard_tf.text())
-        self.cb_summary_moneyDispense.setText(self.cb_dashboard_selected.text())
+        self.cb_summary_moneyDispense.setText(str(self.total_amount_to_dispense))
 
         # Denomination = collect all checked checkboxes
         denominations = []
@@ -315,7 +317,7 @@ class CoinBillConverter(QStackedWidget):
 
         # Display as comma-separated (or customize formatting)
         self.cb_summary_denomination.setText(", ".join(denominations) if denominations else "None")
-
+        
         # Finally, navigate to summary tab
         self.navigate(self.PAGE_cb_summary)
 
@@ -380,9 +382,25 @@ class CoinBillConverter(QStackedWidget):
 
         print(f"[CoinBillConverter] select_s_amount_button - Amount: {amount}, Fee: {fee}, Total: {total_due}")
 
+    def get_selected_denoms(self):
+        checkbox_mapping = {
+            self.cb_dashboard_20: 20,
+            self.cb_dashboard_50: 50,
+            self.cb_dashboard_100: 100,
+            self.cb_dashboard_200: 200
+        }
+        return [amount for checkbox, amount in checkbox_mapping.items() if checkbox.isChecked()]
+
     def convert_coin_to_bill(self, _=None):
-        pass  # Conversion logic
-    
+        success, breakdown = convert_coins_to_bills(self.total_amount_to_dispense, self.get_selected_denoms())
+
+        if success:
+            print(f"[CoinBillConverter] convert_coin_to_bill - Conversion successful: {breakdown}")
+            self.go_to_cb_dispense()
+        else:
+            print("[CoinBillConverter] convert_coin_to_bill - Conversion failed: insufficient bills/coins")
+            self.navigate(self.PAGE_insufficient)
+
     #CB Dashboard Checkboxes
     def update_dashboard_checkboxes(self):
         # Get displayed selected amount (remove "P" prefix)
@@ -441,7 +459,7 @@ class CoinBillConverter(QStackedWidget):
         self.total_money_inserted = self.inserted_coin_amount
         
         # excess coins = inserted - required
-        if self.inserted_coin_amount > self.required_amount:
+        if self.inserted_coin_amount >= self.required_amount:
             self.excess_coins = self.inserted_coin_amount - self.required_amount
             self.total_amount_to_dispense = self.selected_amount + self.excess_coins
 
@@ -474,7 +492,7 @@ class CoinBillConverter(QStackedWidget):
         self.inserted_coin_amount = total_value
         self.total_money_inserted = self.inserted_coin_amount
 
-        if self.inserted_coin_amount < self.required_amount:
+        if self.inserted_coin_amount >= self.required_amount:
             self.excess_coins = self.inserted_coin_amount - self.required_amount
             self.total_amount_to_dispense = self.selected_amount + self.excess_coins
 
@@ -531,7 +549,7 @@ class CoinBillConverter(QStackedWidget):
         self.inserted_coin_amount = total_value
         self.total_money_inserted = self.inserted_coin_amount
         
-        if self.inserted_coin_amount > self.required_amount:
+        if self.inserted_coin_amount >= self.required_amount:
             self.excess_coins = self.inserted_coin_amount - self.required_amount
             self.total_amount_to_dispense = self.selected_amount + self.excess_coins
 
