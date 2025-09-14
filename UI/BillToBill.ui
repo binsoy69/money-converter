@@ -14,7 +14,7 @@
    <string>StackedWidget</string>
   </property>
   <property name="currentIndex">
-   <number>0</number>
+   <number>10</number>
   </property>
   <widget class="QWidget" name="transFrame_00">
    <widget class="QFrame" name="transactionFrame_3">
@@ -111,7 +111,7 @@
       <string/>
      </property>
      <property name="pixmap">
-      <pixmap>C:/Users/Asus Tuf/Documents/dondon my documents/Research/Coinnect UI/2 Icons/Coinnect Logo.png</pixmap>
+      <pixmap>../Documents/dondon my documents/Research/Coinnect UI/2 Icons/Coinnect Logo.png</pixmap>
      </property>
      <property name="scaledContents">
       <bool>true</bool>
@@ -700,7 +700,7 @@ QToolButton:disabled {
       <string/>
      </property>
      <property name="pixmap">
-      <pixmap>C:/Users/Asus Tuf/Documents/dondon my documents/Research/Coinnect UI/2 Icons/arrow_orange.png</pixmap>
+      <pixmap>../Documents/dondon my documents/Research/Coinnect UI/2 Icons/arrow_orange.png</pixmap>
      </property>
      <property name="scaledContents">
       <bool>true</bool>
@@ -2006,7 +2006,7 @@ QToolButton:pressed {
       <string/>
      </property>
      <property name="pixmap">
-      <pixmap>C:/Users/Asus Tuf/Documents/dondon my documents/Research/Coinnect UI/2 Icons/Coinnect Logo.png</pixmap>
+      <pixmap>../Documents/dondon my documents/Research/Coinnect UI/2 Icons/Coinnect Logo.png</pixmap>
      </property>
      <property name="scaledContents">
       <bool>true</bool>
@@ -2051,7 +2051,7 @@ QPushButton:pressed {
      </property>
      <property name="icon">
       <iconset>
-       <normaloff>C:/Users/Asus Tuf/Downloads/back.png</normaloff>C:/Users/Asus Tuf/Downloads/back.png</iconset>
+       <normaloff>../Downloads/back.png</normaloff>../Downloads/back.png</iconset>
      </property>
      <property name="iconSize">
       <size>
@@ -2224,7 +2224,7 @@ QPushButton:pressed {
      </property>
      <property name="icon">
       <iconset>
-       <normaloff>C:/Users/Asus Tuf/Documents/dondon my documents/Research/Coinnect UI/2 Icons/Peso Add.png</normaloff>C:/Users/Asus Tuf/Documents/dondon my documents/Research/Coinnect UI/2 Icons/Peso Add.png</iconset>
+       <normaloff>../Documents/dondon my documents/Research/Coinnect UI/2 Icons/Peso Add.png</normaloff>../Documents/dondon my documents/Research/Coinnect UI/2 Icons/Peso Add.png</iconset>
      </property>
      <property name="iconSize">
       <size>
@@ -2610,7 +2610,7 @@ QProgressBar::chunk {
      </property>
      <property name="icon">
       <iconset>
-       <normaloff>C:/Users/Asus Tuf/Documents/dondon my documents/Research/Coinnect UI/2 Icons/pay.png</normaloff>C:/Users/Asus Tuf/Documents/dondon my documents/Research/Coinnect UI/2 Icons/pay.png</iconset>
+       <normaloff>../Documents/dondon my documents/Research/Coinnect UI/2 Icons/pay.png</normaloff>../Documents/dondon my documents/Research/Coinnect UI/2 Icons/pay.png</iconset>
      </property>
      <property name="iconSize">
       <size>
@@ -3904,7 +3904,7 @@ QCheckBox::indicator:disabled {
       <string/>
      </property>
      <property name="pixmap">
-      <pixmap>C:/Users/Asus Tuf/Documents/dondon my documents/Research/Coinnect UI/2 Icons/Coinnect Logo.png</pixmap>
+      <pixmap>../Documents/dondon my documents/Research/Coinnect UI/2 Icons/Coinnect Logo.png</pixmap>
      </property>
      <property name="scaledContents">
       <bool>true</bool>
@@ -4152,7 +4152,7 @@ QPushButton:pressed {
      </property>
      <property name="icon">
       <iconset>
-       <normaloff>C:/Users/Asus Tuf/Documents/dondon my documents/Research/Coinnect UI/2 Icons/Peso Add.png</normaloff>C:/Users/Asus Tuf/Documents/dondon my documents/Research/Coinnect UI/2 Icons/Peso Add.png</iconset>
+       <normaloff>../Documents/dondon my documents/Research/Coinnect UI/2 Icons/Peso Add.png</normaloff>../Documents/dondon my documents/Research/Coinnect UI/2 Icons/Peso Add.png</iconset>
      </property>
      <property name="iconSize">
       <size>
@@ -4701,7 +4701,7 @@ QProgressBar::chunk {
      </property>
      <property name="icon">
       <iconset>
-       <normaloff>C:/Users/Asus Tuf/Documents/dondon my documents/Research/Coinnect UI/2 Icons/Peso Add.png</normaloff>C:/Users/Asus Tuf/Documents/dondon my documents/Research/Coinnect UI/2 Icons/Peso Add.png</iconset>
+       <normaloff>../Documents/dondon my documents/Research/Coinnect UI/2 Icons/Peso Add.png</normaloff>../Documents/dondon my documents/Research/Coinnect UI/2 Icons/Peso Add.png</iconset>
      </property>
      <property name="iconSize">
       <size>
@@ -4788,7 +4788,7 @@ QProgressBar::chunk {
       <string/>
      </property>
      <property name="pixmap">
-      <pixmap>C:/Users/Asus Tuf/Documents/dondon my documents/Research/Coinnect UI/2 Icons/Insufficient.png</pixmap>
+      <pixmap>../Documents/dondon my documents/Research/Coinnect UI/2 Icons/Insufficient.png</pixmap>
      </property>
      <property name="scaledContents">
       <bool>true</bool>
@@ -4990,7 +4990,7 @@ QToolButton:pressed {
       <string/>
      </property>
      <property name="pixmap">
-      <pixmap>C:/Users/Asus Tuf/Documents/dondon my documents/Research/Coinnect UI/2 Icons/exclamation.png</pixmap>
+      <pixmap>../Documents/dondon my documents/Research/Coinnect UI/2 Icons/exclamation.png</pixmap>
      </property>
      <property name="scaledContents">
       <bool>true</bool>
@@ -5192,7 +5192,7 @@ QToolButton:pressed {
       <string/>
      </property>
      <property name="pixmap">
-      <pixmap>C:/Users/Asus Tuf/Documents/dondon my documents/Research/Coinnect UI/2 Icons/question_white.png</pixmap>
+      <pixmap>../Documents/dondon my documents/Research/Coinnect UI/2 Icons/question_white.png</pixmap>
      </property>
      <property name="scaledContents">
       <bool>true</bool>
@@ -6148,7 +6148,7 @@ QToolButton:pressed {
       <string/>
      </property>
      <property name="pixmap">
-      <pixmap>C:/Users/Asus Tuf/Documents/dondon my documents/Research/Coinnect UI/2 Icons/checkk.png</pixmap>
+      <pixmap>../Documents/dondon my documents/Research/Coinnect UI/2 Icons/checkk.png</pixmap>
      </property>
      <property name="scaledContents">
       <bool>true</bool>
@@ -6307,6 +6307,184 @@ QToolButton:pressed {
       <enum>Qt::ToolButtonIconOnly</enum>
      </property>
     </widget>
+   </widget>
+  </widget>
+  <widget class="QWidget" name="dispensing">
+   <widget class="QFrame" name="dispensing_1">
+    <property name="enabled">
+     <bool>true</bool>
+    </property>
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>20</y>
+      <width>1241</width>
+      <height>761</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>9</pointsize>
+     </font>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">QFrame {
+    background-color: #ff8731;
+	border-radius: 30px;
+}
+</string>
+    </property>
+    <property name="frameShape">
+     <enum>QFrame::NoFrame</enum>
+    </property>
+    <widget class="QLabel" name="loading_icon">
+     <property name="geometry">
+      <rect>
+       <x>490</x>
+       <y>350</y>
+       <width>30</width>
+       <height>30</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+     <property name="pixmap">
+      <pixmap>D:/Coinnect UI/images/new-moon.png</pixmap>
+     </property>
+     <property name="scaledContents">
+      <bool>true</bool>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_188">
+     <property name="geometry">
+      <rect>
+       <x>450</x>
+       <y>440</y>
+       <width>361</width>
+       <height>121</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>Montserrat</family>
+       <pointsize>22</pointsize>
+       <weight>75</weight>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">QLabel {
+    color: white;
+}
+</string>
+     </property>
+     <property name="text">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;Dispensing Money&lt;/p&gt;&lt;p align=&quot;center&quot;&gt;Please wait...&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="loading_icon1">
+     <property name="geometry">
+      <rect>
+       <x>540</x>
+       <y>350</y>
+       <width>30</width>
+       <height>30</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+     <property name="pixmap">
+      <pixmap>D:/Coinnect UI/images/new-moon.png</pixmap>
+     </property>
+     <property name="scaledContents">
+      <bool>true</bool>
+     </property>
+    </widget>
+    <widget class="QLabel" name="loading_icon3">
+     <property name="geometry">
+      <rect>
+       <x>640</x>
+       <y>350</y>
+       <width>30</width>
+       <height>30</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+     <property name="pixmap">
+      <pixmap>D:/Coinnect UI/images/new-moon.png</pixmap>
+     </property>
+     <property name="scaledContents">
+      <bool>true</bool>
+     </property>
+    </widget>
+    <widget class="QLabel" name="loading_icon2">
+     <property name="geometry">
+      <rect>
+       <x>590</x>
+       <y>350</y>
+       <width>30</width>
+       <height>30</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+     <property name="pixmap">
+      <pixmap>D:/Coinnect UI/images/new-moon.png</pixmap>
+     </property>
+     <property name="scaledContents">
+      <bool>true</bool>
+     </property>
+    </widget>
+    <widget class="QLabel" name="loading_icon5">
+     <property name="geometry">
+      <rect>
+       <x>740</x>
+       <y>350</y>
+       <width>30</width>
+       <height>30</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+     <property name="pixmap">
+      <pixmap>D:/Coinnect UI/images/new-moon.png</pixmap>
+     </property>
+     <property name="scaledContents">
+      <bool>true</bool>
+     </property>
+    </widget>
+    <widget class="QLabel" name="loading_icon4">
+     <property name="geometry">
+      <rect>
+       <x>690</x>
+       <y>350</y>
+       <width>30</width>
+       <height>30</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+     <property name="pixmap">
+      <pixmap>D:/Coinnect UI/images/new-moon.png</pixmap>
+     </property>
+     <property name="scaledContents">
+      <bool>true</bool>
+     </property>
+    </widget>
+    <zorder>label_188</zorder>
+    <zorder>loading_icon</zorder>
+    <zorder>loading_icon1</zorder>
+    <zorder>loading_icon3</zorder>
+    <zorder>loading_icon2</zorder>
+    <zorder>loading_icon5</zorder>
+    <zorder>loading_icon4</zorder>
    </widget>
   </widget>
  </widget>

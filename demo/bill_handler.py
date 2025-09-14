@@ -53,7 +53,7 @@ class BillStorage:
 
     # --- Getters & Setters ---
     def get_count(self, denom):
-        return self.data.get(denom, 0)
+        return self.data.get(str(denom), 0)
 
     def set_count(self, denom, count):
         self.data[denom] = max(0, count)  # prevent negative

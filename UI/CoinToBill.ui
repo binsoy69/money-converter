@@ -14,7 +14,7 @@
    <string>StackedWidget</string>
   </property>
   <property name="currentIndex">
-   <number>2</number>
+   <number>8</number>
   </property>
   <widget class="QWidget" name="transFrame_00">
    <widget class="QFrame" name="transactionFrame_3">
@@ -2315,7 +2315,7 @@ QToolButton:pressed {
       <string/>
      </property>
      <property name="pixmap">
-      <pixmap>C:/Users/Asus Tuf/Documents/dondon my documents/Research/Coinnect UI/2 Icons/Coinnect Logo.png</pixmap>
+      <pixmap>../Documents/dondon my documents/Research/Coinnect UI/2 Icons/Coinnect Logo.png</pixmap>
      </property>
      <property name="scaledContents">
       <bool>true</bool>
@@ -2557,7 +2557,7 @@ QPushButton:pressed {
      </property>
      <property name="icon">
       <iconset>
-       <normaloff>C:/Users/Asus Tuf/Documents/dondon my documents/Research/Coinnect UI/2 Icons/Peso Add.png</normaloff>C:/Users/Asus Tuf/Documents/dondon my documents/Research/Coinnect UI/2 Icons/Peso Add.png</iconset>
+       <normaloff>../Documents/dondon my documents/Research/Coinnect UI/2 Icons/Peso Add.png</normaloff>../Documents/dondon my documents/Research/Coinnect UI/2 Icons/Peso Add.png</iconset>
      </property>
      <property name="iconSize">
       <size>
@@ -5188,7 +5188,7 @@ QToolButton:pressed {
     <widget class="QToolButton" name="cb_exclamation_insertanother">
      <property name="geometry">
       <rect>
-       <x>480</x>
+       <x>690</x>
        <y>640</y>
        <width>261</width>
        <height>51</height>
@@ -5248,6 +5248,247 @@ QToolButton:pressed {
       <enum>Qt::ToolButtonIconOnly</enum>
      </property>
     </widget>
+    <widget class="QToolButton" name="cb_exclamation_selectanother">
+     <property name="geometry">
+      <rect>
+       <x>300</x>
+       <y>640</y>
+       <width>341</width>
+       <height>51</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>Montserrat</family>
+       <pointsize>14</pointsize>
+       <weight>75</weight>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="cursor">
+      <cursorShape>PointingHandCursor</cursorShape>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">QToolButton {
+    background-color: transparent;
+    color: white;
+    border: 2px solid white;
+    border-radius: 15px;
+
+    text-align: center;
+}
+
+
+QToolButton:hover {
+    background-color: #FFC499;  /* light gray */
+	border: 2px solid #FFC499;
+}
+
+QToolButton:pressed {
+    background-color: #F56600;
+	color: white;
+    padding-top: 10px;  /* simulate press-in */
+    padding-bottom: 15px;
+ 
+}</string>
+     </property>
+     <property name="text">
+      <string>Select Another Transaction</string>
+     </property>
+     <property name="iconSize">
+      <size>
+       <width>200</width>
+       <height>200</height>
+      </size>
+     </property>
+     <property name="checkable">
+      <bool>false</bool>
+     </property>
+     <property name="popupMode">
+      <enum>QToolButton::DelayedPopup</enum>
+     </property>
+     <property name="toolButtonStyle">
+      <enum>Qt::ToolButtonIconOnly</enum>
+     </property>
+    </widget>
+   </widget>
+  </widget>
+  <widget class="QWidget" name="dispensing">
+   <widget class="QFrame" name="dispensing_1">
+    <property name="enabled">
+     <bool>true</bool>
+    </property>
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>20</y>
+      <width>1241</width>
+      <height>761</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>9</pointsize>
+     </font>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">QFrame {
+    background-color: #ff8731;
+	border-radius: 30px;
+}
+</string>
+    </property>
+    <property name="frameShape">
+     <enum>QFrame::NoFrame</enum>
+    </property>
+    <widget class="QLabel" name="loading_icon">
+     <property name="geometry">
+      <rect>
+       <x>490</x>
+       <y>350</y>
+       <width>30</width>
+       <height>30</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+     <property name="pixmap">
+      <pixmap>D:/Coinnect UI/images/new-moon.png</pixmap>
+     </property>
+     <property name="scaledContents">
+      <bool>true</bool>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_188">
+     <property name="geometry">
+      <rect>
+       <x>450</x>
+       <y>440</y>
+       <width>361</width>
+       <height>121</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>Montserrat</family>
+       <pointsize>22</pointsize>
+       <weight>75</weight>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">QLabel {
+    color: white;
+}
+</string>
+     </property>
+     <property name="text">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;Dispensing Money&lt;/p&gt;&lt;p align=&quot;center&quot;&gt;Please wait...&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="loading_icon1">
+     <property name="geometry">
+      <rect>
+       <x>540</x>
+       <y>350</y>
+       <width>30</width>
+       <height>30</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+     <property name="pixmap">
+      <pixmap>D:/Coinnect UI/images/new-moon.png</pixmap>
+     </property>
+     <property name="scaledContents">
+      <bool>true</bool>
+     </property>
+    </widget>
+    <widget class="QLabel" name="loading_icon3">
+     <property name="geometry">
+      <rect>
+       <x>640</x>
+       <y>350</y>
+       <width>30</width>
+       <height>30</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+     <property name="pixmap">
+      <pixmap>D:/Coinnect UI/images/new-moon.png</pixmap>
+     </property>
+     <property name="scaledContents">
+      <bool>true</bool>
+     </property>
+    </widget>
+    <widget class="QLabel" name="loading_icon2">
+     <property name="geometry">
+      <rect>
+       <x>590</x>
+       <y>350</y>
+       <width>30</width>
+       <height>30</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+     <property name="pixmap">
+      <pixmap>D:/Coinnect UI/images/new-moon.png</pixmap>
+     </property>
+     <property name="scaledContents">
+      <bool>true</bool>
+     </property>
+    </widget>
+    <widget class="QLabel" name="loading_icon5">
+     <property name="geometry">
+      <rect>
+       <x>740</x>
+       <y>350</y>
+       <width>30</width>
+       <height>30</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+     <property name="pixmap">
+      <pixmap>D:/Coinnect UI/images/new-moon.png</pixmap>
+     </property>
+     <property name="scaledContents">
+      <bool>true</bool>
+     </property>
+    </widget>
+    <widget class="QLabel" name="loading_icon4">
+     <property name="geometry">
+      <rect>
+       <x>690</x>
+       <y>350</y>
+       <width>30</width>
+       <height>30</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+     <property name="pixmap">
+      <pixmap>D:/Coinnect UI/images/new-moon.png</pixmap>
+     </property>
+     <property name="scaledContents">
+      <bool>true</bool>
+     </property>
+    </widget>
+    <zorder>label_188</zorder>
+    <zorder>loading_icon</zorder>
+    <zorder>loading_icon1</zorder>
+    <zorder>loading_icon3</zorder>
+    <zorder>loading_icon2</zorder>
+    <zorder>loading_icon5</zorder>
+    <zorder>loading_icon4</zorder>
    </widget>
   </widget>
  </widget>

@@ -10,7 +10,7 @@ from demo.coin_handler import CoinStorage
 from demo.coin_to_bill_converter import convert_coins_to_bills
 
 
-simulated_coins = [10,5,5,5]
+simulated_coins = [10,10,10,10,5,5,1,1,1,1,1,5,10,5,20,20,20,10,5]
 class CoinBillConverter(QStackedWidget):
     CLICKED_STYLE = """
         QToolButton {
@@ -354,6 +354,18 @@ class CoinBillConverter(QStackedWidget):
         self.converter_service_proceed.setEnabled(False)
         for btn in self.s_amount_buttons:
             btn.setStyleSheet(self.NORMAL_STYLE)
+        
+        # Reset checkboxes
+        checkbox_mapping = {
+            self.cb_dashboard_20: 20,
+            self.cb_dashboard_50: 50,
+            self.cb_dashboard_100: 100,
+            self.cb_dashboard_200: 200
+        }
+
+        for cb in checkbox_mapping.keys():
+            cb.setChecked(False)   # uncheck
+            cb.setEnabled(True) 
         print("[CoinBillConverter] reset_transaction_state - Transaction state reset")
     
     def resetLabels(self):
@@ -479,6 +491,8 @@ class CoinBillConverter(QStackedWidget):
         Called when CoinHandlerWorker finishes (natural completion).
         total_value is final total inserted coins.
         """
+        self.stop_countdown()
+        self.on_timeout = None  # prevent auto-navigation
         # ensure we stop and clear worker
         if hasattr(self, "coin_handler_worker") and self.coin_handler_worker is not None:
             try:
@@ -516,6 +530,9 @@ class CoinBillConverter(QStackedWidget):
 
     def proceed_coin_insertion(self, _=None):
         """Called when user presses proceed button."""
+        self.stop_countdown()
+        self.on_timeout = None  # prevent auto-navigation
+        
         total = self.coin_handler_worker.handler.finalize()
         if total >= self.coin_handler_worker.required_fee:
             print("[CoinToBill] Proceed success")

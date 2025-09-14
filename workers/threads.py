@@ -5,7 +5,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from demo.bill_handler import BillHandler
 from demo.coin_handler import CoinHandler
 
-class BillHandlerWorker(QThread):
+class BillAcceptorWorker(QThread):
     bill_result = pyqtSignal(bool, str)   # success flag, denomination
     finished = pyqtSignal()
 
@@ -16,13 +16,13 @@ class BillHandlerWorker(QThread):
         self.handler = BillHandler(selected_bill)   # your imported class
 
     def run(self):
-        print("[BillHandlerWorker] Starting with BillHandler...")
+        print("[BillAcceptorWorker] Starting with BillHandler...")
         success, inserted_bill = self.handler.verify_bill()
         self.bill_result.emit(success, str(inserted_bill))
         self.finished.emit()
 
     def stop(self):
-        print("[BillHandlerWorker] Stopping...")
+        print("[BillAcceptorWorker] Stopping...")
         self._running = False
 
 class CoinHandlerWorker(QThread):
@@ -42,6 +42,8 @@ class CoinHandlerWorker(QThread):
         self.coinInserted.emit(denom, count, total)
         if total >= self.required_fee:
             self.stop()
+            
+            
 
     def run(self):
         print("[CoinHandlerWorker] Waiting for coins...")
@@ -55,3 +57,5 @@ class CoinHandlerWorker(QThread):
     def stop(self):
         print("[CoinHandlerWorker] Stopping...")
         self._running = False
+        self.quit()
+
