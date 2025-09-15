@@ -3,7 +3,8 @@ from PyQt5.QtCore import QThread, pyqtSignal
 import os, sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from demo.bill_handler import BillHandler
-from demo.coin_handler import CoinHandler
+#from demo.coin_handler import CoinHandler
+from coin_handler.python.coin_handler_serial import * 
 
 class BillAcceptorWorker(QThread):
     bill_result = pyqtSignal(bool, str)   # success flag, denomination
@@ -32,27 +33,41 @@ class CoinHandlerWorker(QThread):
     def __init__(self, required_fee):
         super().__init__()
         self.required_fee = required_fee
-        self.handler = CoinHandler(required_fee)
+        self.handler = CoinHandlerSerial(required_fee)
         self._running = True
 
         # Register callback for live updates
         self.handler.add_callback(self._emit_coin_inserted)
+        # Register callback for "required fee reached" event
+        self.handler.add_reached_callback(self._emit_required_reached)
 
     def _emit_coin_inserted(self, denom, count, total):
         self.coinInserted.emit(denom, count, total)
         if total >= self.required_fee:
             self.stop()
-            
+
+    def _emit_required_reached(self, total_value):
+        # forward to UI/controller so it can auto-proceed
+        self.coinsProcessed.emit(int(total_value))
             
 
     def run(self):
-        print("[CoinHandlerWorker] Waiting for coins...")
+        # start accepting coins
+        try:
+            self.handler.start_accepting()
+        except Exception as e:
+            print("[CoinHandlerWorker] start_accepting error:", e)
 
-        # Nothing to do here — now we just wait until insert_coin is called externally
+        # keep thread alive until stop() called
         while self._running:
-            self.msleep(100)
+            time.sleep(0.1)
 
-        self.coinsProcessed.emit(self.handler.total_value)
+        # cleanup
+        try:
+            self.handler.stop_accepting()
+        except Exception as e:
+            print("[CoinHandlerWorker] stop_accepting error:", e)
+
 
     def stop(self):
         print("[CoinHandlerWorker] Stopping...")

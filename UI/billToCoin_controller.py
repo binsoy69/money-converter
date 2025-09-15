@@ -261,7 +261,7 @@ class BillCoinConverter(QStackedWidget):
 
     #Progress Bar Load
     def setup_progressbar(self):
-        self.timer_duration = 60  # seconds
+        self.timer_duration = 10  # seconds
         self.progress_steps = self.timer_duration * 10  # 10 steps per second (100ms)
         self.time_left = self.progress_steps
 
@@ -575,7 +575,7 @@ class BillCoinConverter(QStackedWidget):
         print(f"[BillCoinConverter] Coin insertion started (required_fee=P{required_fee}")
 
         # Hardcoded simulation
-        self.coin_handler_worker.handler.simulate_coins(simulated_coins)
+        #self.coin_handler_worker.handler.simulate_coins(simulated_coins)
     # -------------------------
     # Live coin update (called on every coinInserted signal)
     # -------------------------
