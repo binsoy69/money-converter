@@ -261,7 +261,7 @@ class BillCoinConverter(QStackedWidget):
 
     #Progress Bar Load
     def setup_progressbar(self):
-        self.timer_duration = 10  # seconds
+        self.timer_duration = 60  # seconds
         self.progress_steps = self.timer_duration * 10  # 10 steps per second (100ms)
         self.time_left = self.progress_steps
 
