@@ -99,6 +99,7 @@ class CoinDispenserWorker(QThread):
         try:
             # open port and reader loop
             self.handler.open()
+            print("debug after opening port")
         except Exception as e:
             print("[CoinDispenserWorker] open error:", e)
 

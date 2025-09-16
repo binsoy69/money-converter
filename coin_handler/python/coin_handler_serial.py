@@ -34,6 +34,7 @@ class CoinHandlerSerial:
         # coin storage (persisted)
         self.coin_storage = CoinStorage()  # will persist to JSON
         self._reconnect_wait = 1.0  # start backoff
+        print("debug")
 
     def add_callback(self, fn: Callable[[int, int, int], None]):
         self._callbacks.append(fn)
@@ -105,6 +106,7 @@ class CoinHandlerSerial:
 
     def dispense(self, denom: int, qty: int = 1):
         self._send_command(f"DISPENSE:{denom}:{qty}")
+        print("DEBUG HERE DIPENSE")
 
 
     def simulate_coins(self, seq, interval=0.25):
