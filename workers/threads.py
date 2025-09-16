@@ -97,22 +97,18 @@ class CoinDispenserWorker(QThread):
 
     def run(self):
         try:
-            # open port and reader loop
-            self.handler.open()
-            print("debug after opening port")
-        except Exception as e:
-            print("[CoinDispenserWorker] open error:", e)
-
-        # Send dispense commands one by one
-        for denom, qty in self.breakdown.items():
-            if qty > 0:
+            # Only handle dispense, don’t start_accepting()
+            for denom, qty in self.breakdown.items():
                 self.handler.dispense(denom, qty)
-                # short pause so Arduino processes sequentially
-                time.sleep(0.2)
+                time.sleep(0.2)  # small gap between commands
+        except Exception as e:
+            print("[CoinDispenseWorker] error:", e)
+        finally:
+            # Stop reader gracefully
+            self.handler._reader_running = False
+            time.sleep(0.2)
+            self.handler.close()
 
-        # Keep listening until stopped
-        while self._running:
-            time.sleep(0.1)
 
     def stop(self):
         print("[CoinDispenserWorker] Stopping...")

@@ -105,8 +105,21 @@ class CoinHandlerSerial:
         self.close()
 
     def dispense(self, denom: int, qty: int = 1):
-        self._send_command(f"DISPENSE:{denom}:{qty}")
-        print("DEBUG HERE DIPENSE")
+        # Ensure serial is open
+        if not self.ser or not self.ser.is_open:
+            if not self.open():
+                print("[CoinHandlerSerial] dispense failed: port not open")
+                return
+            # start reader if not running
+            if not self._reader_thread or not self._reader_thread.is_alive():
+                self._reader_running = True
+                self._reader_thread = threading.Thread(target=self._reader_loop, daemon=True)
+                self._reader_thread.start()
+
+        cmd = f"DISPENSE:{denom}:{qty}"
+        self._send_command(cmd)
+        print(f"[DEBUG] dispense command sent: {cmd}")
+
 
 
     def simulate_coins(self, seq, interval=0.25):
