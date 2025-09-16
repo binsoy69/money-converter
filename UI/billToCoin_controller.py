@@ -397,16 +397,27 @@ class BillCoinConverter(QStackedWidget):
         print("[BillCoinConverter] go_back_cb_db called - navigating index 3")
     
     def go_to_cb_dispense(self, _=None):
-        if (self.convert_bill_to_coin()):
-            # Perform conversion and show breakdown
-            # --- Actual dispense ---
+        if self.convert_bill_to_coin():
+            # Show dispensing page immediately
             self.navigate(self.PAGE_dispensing)
-            dispense_coins(self.breakdown, coin_storage)
-            QTimer.singleShot(3000, lambda: self.navigate(self.PAGE_successfullyDispensed))
-            print("[BillCoinConverter] go_to_cb_dispense called - navigating main index 9")
+
+            # Create worker for this breakdown
+            self.coin_dispenser_worker = CoinDispenserWorker(self.breakdown)
+
+            # Connect signals
+            self.coin_dispenser_worker.dispenseAck.connect(self.on_dispense_ack)
+            self.coin_dispenser_worker.dispenseDone.connect(self.on_dispense_done)
+            self.coin_dispenser_worker.dispenseError.connect(self.on_dispense_error)
+            self.coin_dispenser_worker.finished.connect(self.on_dispense_finished)
+
+            # Start worker
+            self.coin_dispenser_worker.start()
+
+            print("[BillCoinConverter] go_to_cb_dispense → started dispensing...")
         else:
-            print("[BillCoinConverter] go_to_cb_dispense called - conversion failed")
+            print("[BillCoinConverter] go_to_cb_dispense → conversion failed")
             self.navigate(self.PAGE_insufficient)
+
     # --- END NAVIGATION ---
 
     # --- Helper functions ---
@@ -564,7 +575,7 @@ class BillCoinConverter(QStackedWidget):
 
         # start new worker
         required_fee = self.selected_fee
-        self.coin_handler_worker = CoinHandlerWorker(required_fee=required_fee)
+        self.coin_handler_worker = CoinAcceptorWorker(required_fee=required_fee)
         self.coin_handler_worker.coinInserted.connect(self.on_single_coin_inserted)
         self.coin_handler_worker.coinsProcessed.connect(self.on_coins_finalized)
         self.coin_handler_worker.start()
@@ -757,6 +768,21 @@ class BillCoinConverter(QStackedWidget):
             f"excess_coins={self.excess_coins}, "
             f"to_dispense=P{self.total_amount_to_dispense}")
 
+    # For coin dispensing
+    def on_dispense_ack(self, denom, qty):
+        print(f"[ACK] Dispensing ₱{denom} x{qty}")
+
+    def on_dispense_done(self, denom, qty):
+        print(f"[DONE] Dispensed ₱{denom} x{qty}")
+        # You could also update a progress bar here
+
+    def on_dispense_error(self, msg):
+        print("[ERROR] Dispense failed:", msg)
+        self.navigate(self.PAGE_insufficient)
+
+    def on_dispense_finished(self):
+        print("[BillCoinConverter] Dispensing finished")
+        self.navigate(self.PAGE_successfullyDispensed)
 
     # TO Del
     def go_back_cb_insert(self, _=None):

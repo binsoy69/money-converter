@@ -26,7 +26,7 @@ class BillAcceptorWorker(QThread):
         print("[BillAcceptorWorker] Stopping...")
         self._running = False
 
-class CoinHandlerWorker(QThread):
+class CoinAcceptorWorker(QThread):
     coinInserted = pyqtSignal(int, int, int)   # denom, count, total
     coinsProcessed = pyqtSignal(int)           # final total value
 
@@ -36,41 +36,85 @@ class CoinHandlerWorker(QThread):
         self.handler = CoinHandlerSerial(required_fee)
         self._running = True
 
-        # Register callback for live updates
+        # Register callbacks
         self.handler.add_callback(self._emit_coin_inserted)
-        # Register callback for "required fee reached" event
         self.handler.add_reached_callback(self._emit_required_reached)
 
     def _emit_coin_inserted(self, denom, count, total):
         self.coinInserted.emit(denom, count, total)
-        if total >= self.required_fee:
+        if self.required_fee > 0 and total >= self.required_fee:
             self.stop()
 
     def _emit_required_reached(self, total_value):
-        # forward to UI/controller so it can auto-proceed
         self.coinsProcessed.emit(int(total_value))
-            
 
     def run(self):
-        # start accepting coins
         try:
             self.handler.start_accepting()
         except Exception as e:
-            print("[CoinHandlerWorker] start_accepting error:", e)
+            print("[CoinAcceptorWorker] start_accepting error:", e)
 
-        # keep thread alive until stop() called
         while self._running:
             time.sleep(0.1)
 
-        # cleanup
         try:
             self.handler.stop_accepting()
         except Exception as e:
-            print("[CoinHandlerWorker] stop_accepting error:", e)
-
+            print("[CoinAcceptorWorker] stop_accepting error:", e)
 
     def stop(self):
-        print("[CoinHandlerWorker] Stopping...")
+        print("[CoinAcceptorWorker] Stopping...")
         self._running = False
         self.quit()
 
+class CoinDispenserWorker(QThread):
+    dispenseAck = pyqtSignal(int, int)   # denom, qty
+    dispenseDone = pyqtSignal(int, int)  # denom, qty
+    dispenseError = pyqtSignal(str)      # error message
+
+    def __init__(self, breakdown: dict):
+        """
+        breakdown = {denom: qty}
+        """
+        super().__init__()
+        self.breakdown = breakdown
+        self.handler = CoinHandlerSerial(required_fee=0)  # fee irrelevant for dispensing
+        self._running = True
+
+        # Register callbacks
+        self.handler.add_dispense_callback(self._emit_dispense_ack)
+        self.handler.add_dispense_done_callback(self._emit_dispense_done)
+        self.handler.add_error_callback(self._emit_dispense_error)
+
+    def _emit_dispense_ack(self, denom, qty):
+        self.dispenseAck.emit(denom, qty)
+
+    def _emit_dispense_done(self, denom, qty):
+        self.dispenseDone.emit(denom, qty)
+
+    def _emit_dispense_error(self, msg):
+        self.dispenseError.emit(msg)
+
+    def run(self):
+        try:
+            # open port and reader loop
+            self.handler.open()
+        except Exception as e:
+            print("[CoinDispenserWorker] open error:", e)
+
+        # Send dispense commands one by one
+        for denom, qty in self.breakdown.items():
+            if qty > 0:
+                self.handler.dispense(denom, qty)
+                # short pause so Arduino processes sequentially
+                time.sleep(0.2)
+
+        # Keep listening until stopped
+        while self._running:
+            time.sleep(0.1)
+
+    def stop(self):
+        print("[CoinDispenserWorker] Stopping...")
+        self._running = False
+        self.handler.close()
+        self.quit()

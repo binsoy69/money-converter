@@ -4,7 +4,7 @@ import threading
 import time
 import traceback
 from typing import Callable
-from demo.coin_handler import CoinStorage  # your uploaded demo file (persisted storage)
+from .coin_storage import CoinStorage
 
 class CoinHandlerSerial:
     def __init__(self, required_fee, port="/dev/ttyACM0", baud=9600, reconnect=True):
@@ -25,6 +25,9 @@ class CoinHandlerSerial:
 
         self._callbacks = []  # callbacks: fn(denom, count_for_denom, total_value)
         self._reached_callbacks = []  # callbacks for when required fee reached: fn(total_value)
+        self._dispense_callbacks = []      # fn(denom, qty)
+        self._dispense_done_callbacks = [] # fn(denom, qty)
+        self._error_callbacks = []         # fn(msg)
         self._reached_emitted = False
         self._lock = threading.Lock()
 
@@ -38,6 +41,15 @@ class CoinHandlerSerial:
     def add_reached_callback(self, fn):
         """Register a callback called once when required fee is reached. fn(total_value)"""
         self._reached_callbacks.append(fn)
+
+    def add_dispense_callback(self, fn):
+        self._dispense_callbacks.append(fn)
+
+    def add_dispense_done_callback(self, fn):
+        self._dispense_done_callbacks.append(fn)
+
+    def add_error_callback(self, fn):
+        self._error_callbacks.append(fn)
 
     # ----- Serial open/close/reconnect -----
     def open(self):
@@ -93,6 +105,7 @@ class CoinHandlerSerial:
 
     def dispense(self, denom: int, qty: int = 1):
         self._send_command(f"DISPENSE:{denom}:{qty}")
+
 
     def simulate_coins(self, seq, interval=0.25):
         """Callbacks will be triggered but storage isn't changed here (we call storage in real handler).
@@ -150,42 +163,72 @@ class CoinHandlerSerial:
         print("[CoinHandlerSerial] reader stopped")
 
     def _parse_line(self, line: str):
-        # Possible formats:
+        # Possible formats expected from Arduino:
         # COIN:<denom>
         # SORT_DONE:<denom>
         # ACK:ENABLE_COIN
-        # ACK:DISPENSE:5:3
-        # DISPENSE_DONE:denom:qty
-        # ERR:...
+        # ACK:DISPENSE:<denom>:<qty>
+        # DISPENSE_DONE:<denom>:<qty>
+        # ERR:<message>
+
         parts = line.split(":")
         tag = parts[0].upper()
+
         if tag == "COIN" and len(parts) >= 2:
             try:
                 denom = int(parts[1])
                 self._handle_coin(denom)
-            except:
-                print("[CoinHandlerSerial] malformed COIN line:", line)
+            except Exception as e:
+                print("[CoinHandlerSerial] malformed COIN line:", line, e)
+
         elif tag == "PULSE" and len(parts) >= 2:
-            # fallback rarely used
+            # Fallback support (if Arduino sends pulses instead of denom)
             try:
                 pulses = int(parts[1])
                 denom = self._map_pulses_to_denom(pulses)
                 self._handle_coin(denom)
-            except:
-                print("[CoinHandlerSerial] malformed PULSE line:", line)
+            except Exception as e:
+                print("[CoinHandlerSerial] malformed PULSE line:", line, e)
+
         elif tag == "ACK":
-            print("[CoinHandlerSerial] ACK ->", ":".join(parts[1:]))
-        elif tag == "PONG" or tag == "PONG":
-            print("[CoinHandlerSerial] PONG")
-        elif tag == "SORT_DONE":
-            print("[CoinHandlerSerial] SORT_DONE ->", parts[1] if len(parts) > 1 else "")
-        elif tag == "DISPENSE_DONE":
-            print("[CoinHandlerSerial] DISPENSE_DONE ->", parts[1:])
+            if len(parts) >= 2 and parts[1].startswith("DISPENSE") and len(parts) >= 4:
+                # ACK:DISPENSE:<denom>:<qty>
+                try:
+                    denom = int(parts[2])
+                    qty = int(parts[3])
+                    print(f"[CoinHandlerSerial] ACK -> DISPENSE {denom} x{qty}")
+                    for cb in self._dispense_callbacks:
+                        cb(denom, qty)
+                except Exception as e:
+                    print("[CoinHandlerSerial] bad ACK DISPENSE:", e)
+            else:
+                print("[CoinHandlerSerial] ACK ->", ":".join(parts[1:]))
+
+        elif tag == "SORT_DONE" and len(parts) >= 2:
+            print("[CoinHandlerSerial] SORT_DONE ->", parts[1])
+
+        elif tag == "DISPENSE_DONE" and len(parts) >= 3:
+            try:
+                denom = int(parts[1])
+                qty = int(parts[2])
+                # Deduct from coin storage
+                actual = self.coin_storage.deduct(denom, qty)
+                print(f"[CoinHandlerSerial] DISPENSE_DONE -> {denom} x{actual}")
+                for cb in self._dispense_done_callbacks:
+                    cb(denom, actual)
+            except Exception as e:
+                print("[CoinHandlerSerial] bad DISPENSE_DONE:", e)
+
         elif tag == "ERR":
-            print("[CoinHandlerSerial] ERR from arduino:", ":".join(parts[1:]))
+            msg = ":".join(parts[1:])
+            print("[CoinHandlerSerial] ERR from arduino:", msg)
+            for cb in self._error_callbacks:
+                cb(msg)
+
         else:
-            # Unknown message - print for debug
+            # Unknown or debug message
             print("[CoinHandlerSerial] Unknown msg:", line)
+
 
     def _handle_coin(self, denom: int):
         with self._lock:
