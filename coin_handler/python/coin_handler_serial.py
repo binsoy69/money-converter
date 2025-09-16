@@ -148,19 +148,25 @@ class CoinHandlerSerial:
                 if not self.ser or not self.ser.is_open:
                     time.sleep(0.2)
                     continue
+
                 raw = self.ser.readline()
                 if not raw:
                     continue
                 line = raw.decode('utf-8', errors='ignore').strip()
                 if not line:
                     continue
+
                 print("[ARDUINO]", line)
                 self._parse_line(line)
+
             except Exception as e:
+                if not self._reader_running:
+                    break  # Exit gracefully if stopped
                 print("[CoinHandlerSerial] reader exception:", e)
                 traceback.print_exc()
                 time.sleep(0.5)
         print("[CoinHandlerSerial] reader stopped")
+
 
     def _parse_line(self, line: str):
         # Possible formats expected from Arduino:

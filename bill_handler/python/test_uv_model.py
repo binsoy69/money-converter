@@ -9,7 +9,7 @@ from ultralytics import YOLO
 script_dir = os.path.dirname(os.path.abspath(__file__))
 
 # Build the absolute path to the model
-model_path = os.path.join(script_dir, '..', 'models', 'uv_cls_v2_ncnn_model')
+model_path = os.path.join(script_dir, '..', 'models', 'uv_cls_v2.pt')
 
 if not os.path.exists(model_path):
     print(f"Model file not found at: {model_path}")
