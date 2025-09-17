@@ -1,29 +1,90 @@
 # threads.py
 from PyQt5.QtCore import QThread, pyqtSignal
-import os, sys
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from demo.bill_handler import BillHandler
-#from demo.coin_handler import CoinHandler
+
+# from demo.bill_handler import BillHandler
+# from demo.coin_handler import CoinHandler
 from coin_handler.python.coin_handler_serial import * 
+from bill_handler.python.pi_bill_handler import *
+import traceback
 
 class BillAcceptorWorker(QThread):
-    bill_result = pyqtSignal(bool, str)   # success flag, denomination
+    bill_result = pyqtSignal(bool, int)   # success, denom
     finished = pyqtSignal()
 
-    def __init__(self, selected_bill):
+    def __init__(self, required_denom: int):
         super().__init__()
+        self.required_denom = required_denom
+        self.handler = PiBillHandler()
         self._running = True
-        self.selected_bill = selected_bill
-        self.handler = BillHandler(selected_bill)   # your imported class
 
     def run(self):
-        print("[BillAcceptorWorker] Starting with BillHandler...")
-        success, inserted_bill = self.handler.verify_bill()
-        self.bill_result.emit(success, str(inserted_bill))
-        self.finished.emit()
+        try:
+            accepted, denom, msg = self.handler.accept_bill(self.required_denom)
+            if accepted:
+                self.bill_result.emit(True, denom or self.required_denom)
+            else:
+                self.bill_result.emit(False, denom or 0)
+        except Exception as e:
+            print("[BillAcceptorWorker] Exception:", e)
+            traceback.print_exc()
+            self.bill_result.emit(False, 0)
+        finally:
+            self.finished.emit()
 
     def stop(self):
-        print("[BillAcceptorWorker] Stopping...")
+        self._running = False
+
+
+class BillDispenserWorker(QThread):
+    dispenseAck = pyqtSignal(int, int)   # denom, qty
+    dispenseDone = pyqtSignal(int, int)
+    dispenseError = pyqtSignal(str)
+    finished = pyqtSignal()
+
+    def __init__(self, breakdown: dict, handler: Optional[PiBillHandler] = None, storage: Optional[BillStorage] = None, dispense_time_ms: int = 1500):
+        super().__init__()
+        self.breakdown = breakdown.copy()
+        self.handler = handler or PiBillHandler()
+        self.storage = storage or BillStorage()
+        self.dispense_time_ms = dispense_time_ms
+        self._running = True
+
+    def run(self):
+        # Reserve storage first
+        ok = self.storage.reserve_bulk(self.breakdown)
+        if not ok:
+            self.dispenseError.emit("insufficient_storage")
+            self.finished.emit()
+            return
+
+        try:
+            for denom, qty in self.breakdown.items():
+                if qty <= 0:
+                    continue
+                self.dispenseAck.emit(denom, qty)
+                ok_disp, msg = self.handler.dispense_bill(denom, qty, self.dispense_time_ms)
+                if not ok_disp:
+                    # rollback previous denoms
+                    for d2, q2 in self.breakdown.items():
+                        if d2 == denom:
+                            break
+                        self.storage.rollback_add(d2, q2)
+                    # also restore current denom
+                    self.storage.rollback_add(denom, qty)
+                    self.dispenseError.emit(f"motor_failed:{msg}")
+                    self.finished.emit()
+                    return
+                self.dispenseDone.emit(denom, qty)
+            self.finished.emit()
+        except Exception as e:
+            traceback.print_exc()
+            # rollback whole breakdown
+            for d, q in self.breakdown.items():
+                self.storage.rollback_add(d, q)
+            self.dispenseError.emit(str(e))
+            self.finished.emit()
+
+    def stop(self):
         self._running = False
 
 class CoinAcceptorWorker(QThread):
