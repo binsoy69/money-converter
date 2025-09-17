@@ -71,47 +71,93 @@ class CoinDispenserWorker(QThread):
     dispenseAck = pyqtSignal(int, int)   # denom, qty
     dispenseDone = pyqtSignal(int, int)  # denom, qty
     dispenseError = pyqtSignal(str)      # error message
+    finished = pyqtSignal()
 
-    def __init__(self, breakdown: dict):
+    def __init__(self, breakdown: dict, serial_port="/dev/ttyACM0", baud=9600,
+                 timeout_per_denom=10.0, reconnect_attempts=3, reconnect_delay=2.0):
         """
         breakdown = {denom: qty}
         """
         super().__init__()
-        self.breakdown = breakdown
-        self.handler = CoinHandlerSerial(required_fee=0)  # fee irrelevant for dispensing
+        self.breakdown = breakdown.copy()
+        self.handler = CoinHandlerSerial(required_fee=0, port=serial_port, baud=baud, reconnect=False)
         self._running = True
+        self.timeout = timeout_per_denom
+        self.reconnect_attempts = reconnect_attempts
+        self.reconnect_delay = reconnect_delay
+
+        # Synchronization for waiting
+        self._done_event = threading.Event()
+        self._expected = None
 
         # Register callbacks
         self.handler.add_dispense_callback(self._emit_dispense_ack)
-        self.handler.add_dispense_done_callback(self._emit_dispense_done)
+        self.handler.add_dispense_done_callback(self._on_dispense_done)
         self.handler.add_error_callback(self._emit_dispense_error)
 
     def _emit_dispense_ack(self, denom, qty):
         self.dispenseAck.emit(denom, qty)
 
-    def _emit_dispense_done(self, denom, qty):
+    def _on_dispense_done(self, denom, qty):
         self.dispenseDone.emit(denom, qty)
+        if self._expected and (denom, qty) == self._expected:
+            self._done_event.set()
 
     def _emit_dispense_error(self, msg):
         self.dispenseError.emit(msg)
+        self._done_event.set()
 
     def run(self):
         try:
-            # Only handle dispense, don’t start_accepting()
-            for denom, qty in self.breakdown.items():
-                self.handler.dispense(denom, qty)
-                time.sleep(0.2)  # small gap between commands
-        except Exception as e:
-            print("[CoinDispenseWorker] error:", e)
-        finally:
-            # Stop reader gracefully
-            self.handler._reader_running = False
-            time.sleep(0.2)
-            self.handler.close()
+            # --- Try to open port with retries ---
+            connected = False
+            for attempt in range(self.reconnect_attempts):
+                if self.handler.open():
+                    connected = True
+                    break
+                else:
+                    print(f"[CoinDispenserWorker] Serial open failed (attempt {attempt+1}/{self.reconnect_attempts})")
+                    time.sleep(self.reconnect_delay)
 
+            if not connected:
+                self.dispenseError.emit("Failed to connect to coin dispenser serial port.")
+                return
+
+            # start reader thread
+            if not getattr(self.handler, "_reader_thread", None) or not self.handler._reader_thread.is_alive():
+                self.handler._reader_running = True
+                self.handler._reader_thread = threading.Thread(target=self.handler._reader_loop, daemon=True)
+                self.handler._reader_thread.start()
+
+            # --- Sequentially dispense ---
+            for denom, qty in self.breakdown.items():
+                if not self._running:
+                    break
+
+                self._expected = (denom, qty)
+                self._done_event.clear()
+
+                self.handler.dispense(denom, qty)
+
+                if not self._done_event.wait(timeout=self.timeout):
+                    err_msg = f"Timeout waiting for DISPENSE_DONE for ₱{denom} x{qty}"
+                    self.dispenseError.emit(err_msg)
+                    break
+
+                time.sleep(0.2)  # small delay between commands
+            self.finished.emit()
+        except Exception as e:
+            self.dispenseError.emit(f"Worker exception: {e}")
+        finally:
+            self._running = False
+            self.handler._reader_running = False
+            self.handler.close()
+            
 
     def stop(self):
         print("[CoinDispenserWorker] Stopping...")
         self._running = False
+        self.handler._reader_running = False
         self.handler.close()
         self.quit()
+        self.wait()

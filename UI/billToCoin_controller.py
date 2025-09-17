@@ -402,8 +402,10 @@ class BillCoinConverter(QStackedWidget):
 
             # Create and start dispense worker
             self.dispense_worker = CoinDispenserWorker(self.breakdown)
-            self.dispense_worker.dispenseDone.connect(lambda d, q: print(f"Dispensed {q} of ₱{d}"))
-            self.dispense_worker.finished.connect(lambda: self.navigate(self.PAGE_successfullyDispensed))
+            self.dispense_worker.dispenseAck.connect(self.on_dispense_ack)
+            self.dispense_worker.dispenseDone.connect(self.on_dispense_done)
+            self.dispense_worker.dispenseError.connect(self.on_dispense_error)
+            self.dispense_worker.finished.connect(self.on_dispense_finished)
             self.dispense_worker.start()
 
             print("[BillCoinConverter] go_to_cb_dispense started dispense worker")
