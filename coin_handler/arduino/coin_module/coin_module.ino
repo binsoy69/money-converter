@@ -17,8 +17,8 @@ Servo sorter;
 const int SORTER_SERVO_PIN = 4;
 // Servo Angles
 const int CENTER = 81;
-const int LEFT   = 48;
-const int RIGHT  = 115;
+const int LEFT   = 45;
+const int RIGHT  = 117;
 
 // --- Dispenser Setup ---
 Servo dispenser1, dispenser5, dispenser10, dispenser20;
