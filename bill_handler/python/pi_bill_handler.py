@@ -13,7 +13,7 @@ from typing import Optional, Tuple
 
 # --- GPIOZero setup ---
 try:
-    from gpiozero import Motor, PWMOutputDevice, DigitalInputDevice, LED
+    from gpiozero import Motor, PWMOutputDevice, DigitalInputDevice, LED, Device
     ON_RPI = True
 except Exception:
     ON_RPI = False
@@ -324,5 +324,12 @@ class PiBillHandler:
                 self.sorter_serial.close()
         except Exception:
             pass
-        self.motor_stop()
-        self.white_off()
+
+        # Release gpiozero pins
+        try:
+            Device.pin_factory.close()
+            print("[PiBillHandler] gpiozero pins released")
+        except Exception as e:
+            print("[PiBillHandler] gpiozero cleanup failed:", e)
+
+        
