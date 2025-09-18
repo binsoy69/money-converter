@@ -18,9 +18,9 @@ enable_pin = PWMOutputDevice(MOTOR_ENABLE_PIN)
 ir_sensor = DigitalInputDevice(IR_SENSOR_PIN, pull_up=True)  # active-low IR
 white_led = LED(WHITE_LED_PIN)
 
-speed = 0.6           # Motor speed (0.0 - 1.0)
-motor_run_time = 2.0  # Time to pull bill in
-required_denom = "100"  # Expected denomination (string must match YOLO label)
+speed = 0.2           # Motor speed (0.0 - 1.0)
+motor_run_time = 0.1  # Time to pull bill in
+required_denom = "50"  # Expected denomination (string must match YOLO label)
 
 # --- Camera + YOLO ---
 def capture_image():

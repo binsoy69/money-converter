@@ -13,8 +13,8 @@ motor = Motor(forward=MOTOR_FORWARD_PIN, backward=MOTOR_BACKWARD_PIN)
 enable_pin = PWMOutputDevice(MOTOR_ENABLE_PIN)
 ir_sensor = DigitalInputDevice(IR_SENSOR_PIN)
 
-speed = 0.5  # Set your desired motor speed (0.0 to 1.0)
-motor_run_time = 2.0  # Seconds to run motor when bill is detected
+speed = 0.2  # Set your desired motor speed (0.0 to 1.0)
+motor_run_time = 0.1  # Seconds to run motor when bill is detected
 
 print("[READY] Waiting for bill insertion...")
 
