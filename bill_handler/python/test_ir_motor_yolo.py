@@ -6,8 +6,8 @@ import os
 from ultralytics import YOLO
 
 # --- Pin configuration (adjust to your wiring) ---
-MOTOR_FORWARD_PIN = 23
-MOTOR_BACKWARD_PIN = 24
+MOTOR_FORWARD_PIN = 24
+MOTOR_BACKWARD_PIN = 23
 MOTOR_ENABLE_PIN = 18   # ENA pin (PWM capable)
 IR_SENSOR_PIN = 17      # IR sensor signal pin (active-low)
 WHITE_LED_PIN = 27      # White LED pin
@@ -15,12 +15,12 @@ WHITE_LED_PIN = 27      # White LED pin
 # --- Hardware setup ---
 motor = Motor(forward=MOTOR_FORWARD_PIN, backward=MOTOR_BACKWARD_PIN)
 enable_pin = PWMOutputDevice(MOTOR_ENABLE_PIN)
-ir_sensor = DigitalInputDevice(IR_SENSOR_PIN, pull_up=True)  # active-low IR
+ir_sensor = DigitalInputDevice(IR_SENSOR_PIN)  # active-low IR
 white_led = LED(WHITE_LED_PIN)
 
-speed = 0.2           # Motor speed (0.0 - 1.0)
-motor_run_time = 0.1  # Time to pull bill in
-required_denom = "50"  # Expected denomination (string must match YOLO label)
+speed = 0.3           # Motor speed (0.0 - 1.0)
+motor_run_time = 0.4  # Time to pull bill in
+required_denom = "50php"  # Expected denomination (string must match YOLO label)
 
 # --- Camera + YOLO ---
 def capture_image():
@@ -98,13 +98,14 @@ def main():
                 print("[IR] Bill detected!")
 
                 # Pull bill in
+                sleep(1)
                 motor_forward()
                 sleep(motor_run_time)
                 motor_stop()
 
                 # UV authenticity
                 if not authenticate_bill(uv_model, uv_labels):
-                    print("[Result] ❌ Fake bill - rejecting...")
+                    print("[Result] Fake bill - rejecting...")
                     motor_reverse()
                     sleep(motor_run_time)
                     motor_stop()
@@ -113,19 +114,22 @@ def main():
                 # Denomination classification
                 denom = classify_denomination(denom_model, denom_labels)
                 if denom is None:
-                    print("[Result] ❌ Could not classify denom - rejecting...")
+                    print("[Result] Could not classify denom - rejecting...")
                     motor_reverse()
                     sleep(motor_run_time)
                     motor_stop()
                     continue
 
                 if denom != required_denom:
-                    print(f"[Result] ❌ Wrong denom (expected {required_denom}, got {denom}) - rejecting...")
+                    print(f"[Result] Wrong denom (expected {required_denom}, got {denom}) - rejecting...")
                     motor_reverse()
                     sleep(motor_run_time)
                     motor_stop()
                 else:
-                    print(f"[Result] ✅ Accepted ₱{denom}")
+                    print(f"[Result] Accepted {denom}")
+                    motor_stop()
+                    motor_forward()
+                    sleep(1)
                     motor_stop()
 
                 sleep(2)  # pause before next detection
