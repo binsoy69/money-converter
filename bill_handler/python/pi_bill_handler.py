@@ -264,11 +264,12 @@ class PiBillHandler:
         """Full accept flow (blocking)."""
         start = time.time()
         while time.time() - start < wait_for_ir_timeout_s:
-            if self.read_ir():
+            if not self.read_ir():
                 break
             time.sleep(0.05)
         else:
             return False, None, "timeout_no_bill"
+        print("Bill Inserted")
         time.sleep(1)
         self.motor_forward()
         time.sleep(motor_forward_ms / 1000.0)
