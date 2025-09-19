@@ -55,8 +55,8 @@ class PiBillHandler:
     def __init__(
         self,
         ir_pin: int = 17,
-        motor_forward_pin: int = 24,
-        motor_backward_pin: int = 23,
+        motor_forward_pin = 24,
+        motor_backward_pin = 23,
         motor_enable_pin: int = 18,   # ENA pin (PWM capable)
         white_led_pin: int = 27,
         sorter_serial_port: str = "/dev/ttyACM0",
@@ -310,6 +310,7 @@ class PiBillHandler:
         """Dispense bills by timed motor runs."""
         for _ in range(qty):
             try:
+                # change motor to dispenser motor here
                 self.motor_forward()
                 time.sleep(dispense_time_ms / 1000.0)
                 self.motor_stop()
