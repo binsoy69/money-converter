@@ -441,7 +441,7 @@ class BillCoinConverter(QStackedWidget):
         selected_amount = self.selected_amount
 
         # Get latest storage state
-        current_storage = coin_storage.get_storage()
+        current_storage = self.coin_handler.storage.get_storage()
 
         for checkbox, amount in self.checkbox_mapping.items():
             # Rule 1: Enable only if denom <= selected amount
@@ -582,9 +582,7 @@ class BillCoinConverter(QStackedWidget):
 
         print(f"[BillCoinConverter] Coin insertion started (required_fee=P{self.selected_fee}")
 
-        # Hardcoded simulation
-        #self.coin_handler_worker.handler.simulate_coins(simulated_coins)
-    # -------------------------
+        
     # Live coin update (called on every coinInserted signal)
     # -------------------------
     def on_single_coin_inserted(self, denomination, denom_count, total_value):

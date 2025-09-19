@@ -9,7 +9,6 @@ from workers.threads import *
 from demo.coin_to_bill_converter import convert_coins_to_bills
 
 
-simulated_coins = [10,10,10,10,5,5,1,1,1,1,1,5,10,5,20,20,20,10,5]
 class CoinBillConverter(QStackedWidget):
     CLICKED_STYLE = """
         QToolButton {
@@ -46,6 +45,7 @@ class CoinBillConverter(QStackedWidget):
     PAGE_insufficient = 5
     PAGE_successfullyDispensed = 6
     PAGE_exclamation_notequal = 7
+    PAGE_dispensing = 8
 
     def __init__(self, parent=None, navigate=None, bill_handler=None, coin_handler=None):
         super().__init__(parent)
@@ -148,12 +148,21 @@ class CoinBillConverter(QStackedWidget):
             10: self.label_coin_10,
             20: self.label_coin_20
         }
+        # Checkbox mapping
+        self.checkbox_mapping = {
+            self.cb_dashboard_20: "20",
+            self.cb_dashboard_50: "50",
+            self.cb_dashboard_100: "100",
+            self.cb_dashboard_200: "200"
+        }
 
         self.total_amount_to_dispense = 0
         self.inserted_coin_amount = 0
         self.excess_coins = 0
         self.selected_amount = 0
         self.required_amount = 0
+        self.bill_breakdown = {}
+        self.coin_breakdown = {}
         
         #CB Transaction / Proceed Button
         self.resetButtons()
@@ -307,18 +316,13 @@ class CoinBillConverter(QStackedWidget):
 
         # Denomination = collect all checked checkboxes
         denominations = []
-        checkbox_mapping = {
-            self.cb_dashboard_20: "20",
-            self.cb_dashboard_50: "50",
-            self.cb_dashboard_100: "100",
-            self.cb_dashboard_200: "200"
-        }
-        for checkbox, label in checkbox_mapping.items():
+
+        for checkbox, label in self.checkbox_mapping.items():
             if checkbox.isChecked():
                 denominations.append(label)
 
         # Display as comma-separated (or customize formatting)
-        self.cb_summary_denomination.setText(", ".join(denominations) if denominations else "None")
+        self.cb_summary_denomination.setText(", ".join(denominations) if denominations else "AUTO")
         
         # Finally, navigate to summary tab
         self.navigate(self.PAGE_cb_summary)
@@ -326,8 +330,22 @@ class CoinBillConverter(QStackedWidget):
         print(f"[CoinBillConverter] go_to_cb_summary - Denominations: {denominations}")
     
     def go_to_cb_dispense(self, _=None):
-        self.navigate(self.PAGE_successfullyDispensed)
-        print("[CoinBillConverter] go_to_cb_dispense - Navigated to index 6")
+        if self.convert_coin_to_bill():
+            self.navigate(self.PAGE_dispensing)
+            # TODO: code for dispensing bill
+            # -- code here --
+            # Dispense coin
+            if self.coin_breakdown:
+                # Create and start dispense worker
+                self.dispense_worker = CoinDispenserWorker(handler=self.coin_handler, breakdown=self.coin_breakdown)
+                self.dispense_worker.dispenseAck.connect(self.on_dispense_ack)
+                self.dispense_worker.dispenseDone.connect(self.on_dispense_done)
+                self.dispense_worker.dispenseError.connect(self.on_dispense_error)
+                self.dispense_worker.finished.connect(self.on_dispense_finished)
+                self.dispense_worker.start()
+        else:
+            print("[CoinBillConverter] Conversion failed")
+            self.navigate(self.PAGE_insufficient)
 
     def go_back_cb_dashboard(self, _=None):
         self.navigate(self.PAGE_dashboardFrame)
@@ -353,19 +371,19 @@ class CoinBillConverter(QStackedWidget):
         self.selected_amount = 0
         self.selected_fee = 0
         self.required_amount = 0
+        self._coins_finalized = False
+        self.total_amount_to_dispense = 0
+        self.excess_coins = 0
+        self.total_money_inserted = 0
+        self.inserted_coin_amount = 0
+        self.bill_breakdown.clear()
+        self.coin_breakdown.clear()
+
         self.converter_service_proceed.setEnabled(False)
         for btn in self.s_amount_buttons:
             btn.setStyleSheet(self.NORMAL_STYLE)
-        
-        # Reset checkboxes
-        checkbox_mapping = {
-            self.cb_dashboard_20: 20,
-            self.cb_dashboard_50: 50,
-            self.cb_dashboard_100: 100,
-            self.cb_dashboard_200: 200
-        }
 
-        for cb in checkbox_mapping.keys():
+        for cb in self.checkbox_mapping.keys():
             cb.setChecked(False)   # uncheck
             cb.setEnabled(True) 
         print("[CoinBillConverter] reset_transaction_state - Transaction state reset")
@@ -406,14 +424,26 @@ class CoinBillConverter(QStackedWidget):
         return [amount for checkbox, amount in checkbox_mapping.items() if checkbox.isChecked()]
 
     def convert_coin_to_bill(self, _=None):
-        success, breakdown = convert_coins_to_bills(self.total_amount_to_dispense, self.get_selected_denoms())
+        amount = self.total_amount_to_dispense
+        if amount <= 0:
+            print("[Convert] Nothing to dispense.")
+            return False
 
-        if success:
-            print(f"[CoinBillConverter] convert_coin_to_bill - Conversion successful: {breakdown}")
-            self.go_to_cb_dispense()
-        else:
-            print("[CoinBillConverter] convert_coin_to_bill - Conversion failed: insufficient bills/coins")
-            self.navigate(self.PAGE_insufficient)
+        # Get selected denominations from checkboxes
+        selected_denoms = self.get_selected_denoms()
+        if not selected_denoms:
+            selected_denoms = [20, 10, 5, 1]  # auto mode
+        
+        # Use global bill_storage and coin_storage (already in your class)
+        coin_storage = self.coin_handler.storage.get_storage()
+        bill_storage = self.bill_handler.storage.get_storage()
+
+        self.bill_breakdown, self.coin_breakdown = convert_coins_to_bills(amount=amount, selected_denoms=selected_denoms, bill_storage=bill_storage, coin_storage=coin_storage)
+
+        if not self.bill_breakdown and not self.coin_breakdown:
+            print("[Convert] ERROR: Cannot dispense with available coins.")
+            return False
+        return True
 
     #CB Dashboard Checkboxes
     def update_dashboard_checkboxes(self):
@@ -424,17 +454,9 @@ class CoinBillConverter(QStackedWidget):
         except ValueError:
             selected_amount = 0  # Default to 0 if invalid display
 
-        # Map your checkboxes to their respective amounts
-        checkbox_mapping = {
-            self.cb_dashboard_20: 20,
-            self.cb_dashboard_50: 50,
-            self.cb_dashboard_100: 100,
-            self.cb_dashboard_200: 200
-        }
-
         # Loop through and disable or enable checkboxes
-        for checkbox, amount in checkbox_mapping.items():
-            if amount > selected_amount:
+        for checkbox, amount in self.checkbox_mapping.items():
+            if int(amount) > selected_amount:
                 checkbox.setEnabled(False)
             else:
                 checkbox.setEnabled(True)
@@ -448,13 +470,22 @@ class CoinBillConverter(QStackedWidget):
     def start_coin_insertion(self, required_total):
         # Spin up worker
         self.resetLabels()
-        self.coin_handler_worker = CoinHandlerWorker(required_total)
+        self.coin_counts = {1: 0, 5: 0, 10: 0, 20: 0}
+        # ensure previous worker is stopped
+        if hasattr(self, "coin_handler_worker") and self.coin_handler_worker is not None:
+            try:
+                if self.coin_handler_worker.isRunning():
+                    self.coin_handler_worker.stop()
+            except Exception:
+                pass
+            self.coin_handler_worker = None
+
+        self.coin_handler_worker = CoinAcceptorWorker(handler=self.coin_handler, required_amount=required_total)
         self.coin_handler_worker.coinInserted.connect(self.on_single_coin_inserted)
         self.coin_handler_worker.coinsProcessed.connect(self.on_coins_finalized)
         self.coin_handler_worker.start()
         # start UI countdown (existing helper). When timeout occurs, it will call self.on_coin_timeout()
         self.start_countdown(on_timeout=self.on_coin_timeout)
-        self.coin_handler_worker.handler.simulate_coins(simulated_coins)
 
     def on_single_coin_inserted(self, denomination, denom_count, total_value):
         """
@@ -462,7 +493,7 @@ class CoinBillConverter(QStackedWidget):
         denom_count: count of that denom
         total_value: running total in pesos
         """
-        self.coin_counts = {1: 0, 5: 0, 10: 0, 20: 0}
+       
         # update per-denom UI
         self.coin_counts[denomination] = denom_count
         if hasattr(self, "coin_labels") and denomination in self.coin_labels:
@@ -535,8 +566,8 @@ class CoinBillConverter(QStackedWidget):
         self.stop_countdown()
         self.on_timeout = None  # prevent auto-navigation
         
-        total = self.coin_handler_worker.handler.finalize()
-        if total >= self.coin_handler_worker.required_fee:
+        total = sum(int(denom) * int(count) for denom, count in self.coin_counts.items())
+        if total >= self.required_amount:
             print("[CoinToBill] Proceed success")
             self.go_to_cb_dashboard()
         else:
@@ -589,6 +620,22 @@ class CoinBillConverter(QStackedWidget):
             f"fee=P{self.selected_fee}, "
             f"excess_coins={self.excess_coins}, "
             f"to_dispense=P{self.total_amount_to_dispense}")
+
+    # For coin dispensing
+    def on_dispense_ack(self, denom, qty):
+        print(f"[ACK] Dispensing ₱{denom} x{qty}")
+
+    def on_dispense_done(self, denom, qty):
+        print(f"[DONE] Dispensed ₱{denom} x{qty}")
+        # You could also update a progress bar here
+
+    def on_dispense_error(self, msg):
+        print("[ERROR] Dispense failed:", msg)
+        self.navigate(self.PAGE_insufficient)
+
+    def on_dispense_finished(self):
+        print("[CoinBillConverter] Dispensing finished")
+        self.navigate(self.PAGE_successfullyDispensed)
 
     #T0 Del
     def go_back_cb_insert(self, _=None):

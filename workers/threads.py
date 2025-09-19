@@ -1,17 +1,18 @@
 # threads.py
+import threading
+import time
 from PyQt5.QtCore import QThread, pyqtSignal
 
 # from demo.bill_handler import BillHandler
 # from demo.coin_handler import CoinHandler
-from coin_handler.python.coin_handler_serial import * 
-from bill_handler.python.pi_bill_handler import *
+
 import traceback
 
 class BillAcceptorWorker(QThread):
     bill_result = pyqtSignal(bool, int)
     finished = pyqtSignal()
 
-    def __init__(self, required_denom: int, handler: PiBillHandler):
+    def __init__(self, required_denom: int, handler):
         super().__init__()
         self.required_denom = required_denom
         self.handler = handler  # reuse controller’s handler
@@ -42,7 +43,7 @@ class BillDispenserWorker(QThread):
     dispenseError = pyqtSignal(str)
     finished = pyqtSignal()
 
-    def __init__(self, breakdown: dict, handler: PiBillHandler, dispense_time_ms: int = 1500):
+    def __init__(self, breakdown: dict, handler, dispense_time_ms: int = 1500):
         super().__init__()
         self.breakdown = breakdown.copy()
         self.handler = handler 
