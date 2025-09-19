@@ -29,6 +29,7 @@ class BillAcceptorWorker(QThread):
             traceback.print_exc()
             self.bill_result.emit(False, 0)
         finally:
+            self.handler.cleanup()
             self.finished.emit()
 
     def stop(self):
