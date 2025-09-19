@@ -6,7 +6,6 @@ import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from workers.threads import *
-from demo.coin_handler import CoinStorage
 from demo.coin_to_bill_converter import convert_coins_to_bills
 
 
@@ -48,12 +47,15 @@ class CoinBillConverter(QStackedWidget):
     PAGE_successfullyDispensed = 6
     PAGE_exclamation_notequal = 7
 
-    def __init__(self, parent=None, navigate=None):
+    def __init__(self, parent=None, navigate=None, bill_handler=None, coin_handler=None):
         super().__init__(parent)
         ui_path = os.path.join(os.path.dirname(__file__), "CoinToBill.ui")
         uic.loadUi(ui_path, self)
         self.navigate_main = navigate
         self.setCurrentIndex(0)
+        self.bill_handler = bill_handler
+        self.coin_handler = coin_handler
+
 
         print("[CoinBillConverter] __init__ called - UI loaded, starting at index 0")
 

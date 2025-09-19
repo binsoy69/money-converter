@@ -32,12 +32,15 @@ class BillBillConverter(QStackedWidget):
         }
     """
 
-    def __init__(self, parent=None, navigate=None):
+    def __init__(self, parent=None, navigate=None, bill_handler=None, coin_handler=None):
         super().__init__(parent)
         ui_path = os.path.join(os.path.dirname(__file__), "BillToBill.ui")
         uic.loadUi(ui_path, self)
         self.navigate_main = navigate
         self.setCurrentIndex(0)
+        self.bill_handler = bill_handler
+        self.coin_handler = coin_handler
+
 
         print("[BillBillConverter] __init__ called - UI loaded, starting at index 0")
 
