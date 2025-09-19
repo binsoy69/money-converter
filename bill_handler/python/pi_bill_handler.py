@@ -329,6 +329,7 @@ class PiBillHandler:
         # Release gpiozero pins
         try:
             Device.pin_factory.close()
+            self.motor.close()
             print("[PiBillHandler] gpiozero pins released")
         except Exception as e:
             print("[PiBillHandler] gpiozero cleanup failed:", e)
