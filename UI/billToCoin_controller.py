@@ -539,12 +539,12 @@ class BillCoinConverter(QStackedWidget):
             except Exception as e:
                 print("[BillCoinConverter] Worker cleanup failed:", e)
 
-    # Create and start a new worker
-    self.bill_acceptor_worker = BillAcceptorWorker(self.selected_amount)
-    self.bill_acceptor_worker.bill_result.connect(self.on_bill_result)
-    self.bill_acceptor_worker.finished.connect(self.on_bill_finished)
-    self.bill_acceptor_worker.start()
-    print("[BillCoinConverter] New worker started")
+        # Create and start a new worker
+        self.bill_acceptor_worker = BillAcceptorWorker(self.selected_amount)
+        self.bill_acceptor_worker.bill_result.connect(self.on_bill_result)
+        self.bill_acceptor_worker.finished.connect(self.on_bill_finished)
+        self.bill_acceptor_worker.start()
+        print("[BillCoinConverter] New worker started")
 
     def on_bill_result(self, success, denomination):
         self.bc_current_count_bill.setText(f"P{denomination}")
