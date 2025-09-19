@@ -8,6 +8,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from workers.threads import *
 from demo.coin_handler import CoinStorage
 from demo.bill_to_coin_converter import *
+from bill_handler.python.pi_bill_handler import *
 
 # Shared coin storage instance
 coin_storage = CoinStorage(initial_count=30)
@@ -61,6 +62,7 @@ class BillCoinConverter(QStackedWidget):
         uic.loadUi(ui_path, self)
         self.navigate_main = navigate
         self.setCurrentIndex(self.PAGE_transFrame)
+        self.bill_handler = PiBillHandler()
 
         print("[BillCoinConverter] __init__ called - UI loaded, starting at index 0")
 
@@ -528,23 +530,14 @@ class BillCoinConverter(QStackedWidget):
 
     # -- Bill handling logic --- 
     def handle_bill_insertion(self):
-        # Stop and clean up any existing worker
-        if hasattr(self, "bill_acceptor_worker") and self.bill_acceptor_worker:
-            try:
-                self.bill_acceptor_worker.stop()
-                self.bill_acceptor_worker.wait()
-                self.bill_acceptor_worker.deleteLater()
-                self.bill_acceptor_worker = None
-                print("[BillCoinConverter] Previous worker cleaned up")
-            except Exception as e:
-                print("[BillCoinConverter] Worker cleanup failed:", e)
-
-        # Create and start a new worker
-        self.bill_acceptor_worker = BillAcceptorWorker(self.selected_amount)
+        self.bill_acceptor_worker = BillAcceptorWorker(
+            self.selected_amount,
+            handler=self.bill_handler
+        )
         self.bill_acceptor_worker.bill_result.connect(self.on_bill_result)
         self.bill_acceptor_worker.finished.connect(self.on_bill_finished)
         self.bill_acceptor_worker.start()
-        print("[BillCoinConverter] New worker started")
+
 
     def on_bill_result(self, success, denomination):
         self.bc_current_count_bill.setText(f"P{denomination}")

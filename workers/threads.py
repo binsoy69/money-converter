@@ -8,14 +8,13 @@ from bill_handler.python.pi_bill_handler import *
 import traceback
 
 class BillAcceptorWorker(QThread):
-    bill_result = pyqtSignal(bool, int)   # success, denom
+    bill_result = pyqtSignal(bool, int)
     finished = pyqtSignal()
 
-    def __init__(self, required_denom: int):
+    def __init__(self, required_denom: int, handler: PiBillHandler):
         super().__init__()
         self.required_denom = required_denom
-        self.handler = PiBillHandler()
-        self._running = True
+        self.handler = handler  # reuse controller’s handler
 
     def run(self):
         try:
@@ -29,8 +28,8 @@ class BillAcceptorWorker(QThread):
             traceback.print_exc()
             self.bill_result.emit(False, 0)
         finally:
-            self.handler.cleanup()
-            self.finished.emit()
+            self.finished.emit()  # no cleanup, since handler persists
+
 
     def stop(self):
         self._running = False
