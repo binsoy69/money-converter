@@ -264,7 +264,7 @@ class PiBillHandler:
         """Full accept flow (blocking)."""
         start = time.time()
         while time.time() - start < wait_for_ir_timeout_s:
-            if not self.read_ir():
+            if self.read_ir():
                 break
             time.sleep(0.05)
         else:
