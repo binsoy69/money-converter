@@ -22,6 +22,7 @@ class BillAcceptorWorker(QThread):
             if accepted:
                 self.bill_result.emit(True, denom or self.required_denom)
             else:
+                print(msg)
                 self.bill_result.emit(False, denom or 0)
         except Exception as e:
             print("[BillAcceptorWorker] Exception:", e)
