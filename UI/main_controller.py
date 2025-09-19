@@ -9,6 +9,9 @@ from billToCoin_controller import BillCoinConverter
 from billToBill_controller import BillBillConverter
 import sys
 import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from bill_handler.python.pi_bill_handler import *
+from coin_handler.python.coin_handler_serial import *
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -17,20 +20,25 @@ class MainWindow(QMainWindow):
         ui_path = os.path.join(os.path.dirname(__file__), "MainDesign.ui")
         uic.loadUi(ui_path, self)
 
+        # --- Shared handlers created once ---
+        self.bill_handler = PiBillHandler()
+        self.coin_handler = CoinHandlerSerial()
+
+
         self.current_index = 0
         self.update_button_styles(self.current_index)
 
         # Load CoinToBill.ui as a page in main_stackedWidget
-        self.coin_bill_widget = CoinBillConverter(parent=self, navigate=self.navigate)
+        self.coin_bill_widget = CoinBillConverter(parent=self, navigate=self.navigate, bill_handler=self.bill_handler, coin_handler=self.coin_handler)
         self.main_stackedWidget.addWidget(self.coin_bill_widget)
         self.coin_bill_index = self.main_stackedWidget.indexOf(self.coin_bill_widget)
 
         # Load BillToCoin.ui as a page in main_stackedWidget
-        self.bill_coin_widget = BillCoinConverter(parent=self, navigate=self.navigate)
+        self.bill_coin_widget = BillCoinConverter(parent=self, navigate=self.navigate, bill_handler=self.bill_handler, coin_handler=self.coin_handler)
         self.main_stackedWidget.addWidget(self.bill_coin_widget)
         self.bill_coin_index = self.main_stackedWidget.indexOf(self.bill_coin_widget)
 
-        self.bill_bill_widget = BillBillConverter(parent=self, navigate=self.navigate)
+        self.bill_bill_widget = BillBillConverter(parent=self, navigate=self.navigate, bill_handler=self.bill_handler, coin_handler=self.coin_handler)
         self.main_stackedWidget.addWidget(self.bill_bill_widget)
         self.bill_bill_index = self.main_stackedWidget.indexOf(self.bill_bill_widget)
 

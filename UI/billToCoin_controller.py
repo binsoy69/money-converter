@@ -6,14 +6,9 @@ import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from workers.threads import *
-from demo.coin_handler import CoinStorage
 from demo.bill_to_coin_converter import *
-from bill_handler.python.pi_bill_handler import *
 
-# Shared coin storage instance
-coin_storage = CoinStorage(initial_count=30)
-coin_storage.reset_storage()
-simulated_coins =[1,1,1]
+
 
 class BillCoinConverter(QStackedWidget):
     CLICKED_STYLE = """
@@ -56,13 +51,14 @@ class BillCoinConverter(QStackedWidget):
     PAGE_successfullyDispensed = 9
     PAGE_dispensing = 10
 
-    def __init__(self, parent=None, navigate=None):
+    def __init__(self, parent=None, navigate=None, bill_handler=None, coin_handler=None):
         super().__init__(parent)
         ui_path = os.path.join(os.path.dirname(__file__), "BillToCoin.ui")
         uic.loadUi(ui_path, self)
         self.navigate_main = navigate
         self.setCurrentIndex(self.PAGE_transFrame)
-        self.bill_handler = PiBillHandler()
+        self.bill_handler = bill_handler
+        self.coin_handler = coin_handler
 
         print("[BillCoinConverter] __init__ called - UI loaded, starting at index 0")
 
@@ -403,7 +399,7 @@ class BillCoinConverter(QStackedWidget):
             self.navigate(self.PAGE_dispensing)
 
             # Create and start dispense worker
-            self.dispense_worker = CoinDispenserWorker(self.breakdown)
+            self.dispense_worker = CoinDispenserWorker(handler=self.coin_handler, breakdown=self.breakdown)
             self.dispense_worker.dispenseAck.connect(self.on_dispense_ack)
             self.dispense_worker.dispenseDone.connect(self.on_dispense_done)
             self.dispense_worker.dispenseError.connect(self.on_dispense_error)
@@ -517,7 +513,7 @@ class BillCoinConverter(QStackedWidget):
             selected_denoms = [20, 10, 5, 1]  # auto mode
 
         # Use global coin_storage (already in your class)
-        storage = coin_storage.get_storage()
+        storage = self.coin_handler.storage.get_storage()
 
         # --- Simulation ---
         self.breakdown = convert_bill_to_coin(amount, selected_denoms, storage)
@@ -576,8 +572,7 @@ class BillCoinConverter(QStackedWidget):
             self.coin_handler_worker = None
 
         # start new worker
-        required_fee = self.selected_fee
-        self.coin_handler_worker = CoinAcceptorWorker(required_fee=required_fee)
+        self.coin_handler_worker = CoinAcceptorWorker(handler=self.coin_handler, required_amount=self.selected_fee)
         self.coin_handler_worker.coinInserted.connect(self.on_single_coin_inserted)
         self.coin_handler_worker.coinsProcessed.connect(self.on_coins_finalized)
         self.coin_handler_worker.start()
@@ -585,7 +580,7 @@ class BillCoinConverter(QStackedWidget):
         # start UI countdown (existing helper). When timeout occurs, it will call self.on_coin_timeout()
         self.start_countdown(on_timeout=self.on_coin_timeout)
 
-        print(f"[BillCoinConverter] Coin insertion started (required_fee=P{required_fee}")
+        print(f"[BillCoinConverter] Coin insertion started (required_fee=P{self.selected_fee}")
 
         # Hardcoded simulation
         #self.coin_handler_worker.handler.simulate_coins(simulated_coins)

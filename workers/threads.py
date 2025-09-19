@@ -42,17 +42,16 @@ class BillDispenserWorker(QThread):
     dispenseError = pyqtSignal(str)
     finished = pyqtSignal()
 
-    def __init__(self, breakdown: dict, handler: Optional[PiBillHandler] = None, storage: Optional[BillStorage] = None, dispense_time_ms: int = 1500):
+    def __init__(self, breakdown: dict, handler: PiBillHandler, dispense_time_ms: int = 1500):
         super().__init__()
         self.breakdown = breakdown.copy()
-        self.handler = handler or PiBillHandler()
-        self.storage = storage or BillStorage()
+        self.handler = handler 
         self.dispense_time_ms = dispense_time_ms
         self._running = True
 
     def run(self):
         # Reserve storage first
-        ok = self.storage.reserve_bulk(self.breakdown)
+        ok = self.handler.storage.reserve_bulk(self.breakdown)
         if not ok:
             self.dispenseError.emit("insufficient_storage")
             self.finished.emit()
@@ -69,9 +68,9 @@ class BillDispenserWorker(QThread):
                     for d2, q2 in self.breakdown.items():
                         if d2 == denom:
                             break
-                        self.storage.rollback_add(d2, q2)
+                        self.handler.storage.rollback_add(d2, q2)
                     # also restore current denom
-                    self.storage.rollback_add(denom, qty)
+                    self.handler.storage.rollback_add(denom, qty)
                     self.dispenseError.emit(f"motor_failed:{msg}")
                     self.finished.emit()
                     return
@@ -81,7 +80,7 @@ class BillDispenserWorker(QThread):
             traceback.print_exc()
             # rollback whole breakdown
             for d, q in self.breakdown.items():
-                self.storage.rollback_add(d, q)
+                self.handler.storage.rollback_add(d, q)
             self.dispenseError.emit(str(e))
             self.finished.emit()
 
@@ -92,10 +91,10 @@ class CoinAcceptorWorker(QThread):
     coinInserted = pyqtSignal(int, int, int)   # denom, count, total
     coinsProcessed = pyqtSignal(int)           # final total value
 
-    def __init__(self, required_fee):
+    def __init__(self, handler, required_amount):
         super().__init__()
-        self.required_fee = required_fee
-        self.handler = CoinHandlerSerial(required_fee)
+        self.required_amount = required_amount
+        self.handler = handler
         self._running = True
 
         # Register callbacks
@@ -104,7 +103,7 @@ class CoinAcceptorWorker(QThread):
 
     def _emit_coin_inserted(self, denom, count, total):
         self.coinInserted.emit(denom, count, total)
-        if self.required_fee > 0 and total >= self.required_fee:
+        if self.required_amount > 0 and total >= self.required_amount:
             self.stop()
 
     def _emit_required_reached(self, total_value):
@@ -112,7 +111,7 @@ class CoinAcceptorWorker(QThread):
 
     def run(self):
         try:
-            self.handler.start_accepting()
+            self.handler.start_accepting(self.required_amount)
         except Exception as e:
             print("[CoinAcceptorWorker] start_accepting error:", e)
 
@@ -135,18 +134,17 @@ class CoinDispenserWorker(QThread):
     dispenseError = pyqtSignal(str)      # error message
     finished = pyqtSignal()
 
-    def __init__(self, breakdown: dict, serial_port="/dev/ttyACM0", baud=9600,
-                 timeout_per_denom=10.0, reconnect_attempts=3, reconnect_delay=2.0):
+    def __init__(self, handler, breakdown: dict):
         """
         breakdown = {denom: qty}
         """
         super().__init__()
         self.breakdown = breakdown.copy()
-        self.handler = CoinHandlerSerial(required_fee=0, port=serial_port, baud=baud, reconnect=False)
+        self.handler = handler
         self._running = True
-        self.timeout = timeout_per_denom
-        self.reconnect_attempts = reconnect_attempts
-        self.reconnect_delay = reconnect_delay
+        self.timeout = 10.0
+        self.reconnect_attempts = 3
+        self.reconnect_delay = 2.0
 
         # Synchronization for waiting
         self._done_event = threading.Event()

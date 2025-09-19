@@ -7,11 +7,10 @@ from typing import Callable
 from .coin_storage import CoinStorage
 
 class CoinHandlerSerial:
-    def __init__(self, required_fee, port="/dev/ttyACM0", baud=9600, reconnect=True):
-        self.required_fee = required_fee
-        self.port = port
-        self.baud = baud
-        self.reconnect = reconnect
+    def __init__(self):
+        self.port = "/dev/ttyACM0"
+        self.baud = 9600
+        self.reconnect = True
 
         self.ser = None
         self._reader_thread = None
@@ -32,7 +31,7 @@ class CoinHandlerSerial:
         self._lock = threading.Lock()
 
         # coin storage (persisted)
-        self.coin_storage = CoinStorage()  # will persist to JSON
+        self.storage = CoinStorage()  # will persist to JSON
         self._reconnect_wait = 1.0  # start backoff
         print("debug")
 
@@ -75,7 +74,7 @@ class CoinHandlerSerial:
             print("[CoinHandlerSerial] close error:", e)
 
     # ----- Control functions -----
-    def start_accepting(self):
+    def start_accepting(self, required_amount):
         """Open port and start reader thread; send ENABLE_COIN."""
         self._running = True
 
@@ -91,7 +90,7 @@ class CoinHandlerSerial:
         # start reader
         if not self._reader_thread or not self._reader_thread.is_alive():
             self._reader_running = True
-            self._reader_thread = threading.Thread(target=self._reader_loop, daemon=True)
+            self._reader_thread = threading.Thread(target=self._reader_loop(required_amount), daemon=True)
             self._reader_thread.start()
 
     def stop_accepting(self):
@@ -155,7 +154,7 @@ class CoinHandlerSerial:
                 time.sleep(self._reconnect_wait)
                 self._reconnect_wait = min(self._reconnect_wait * 1.5, 10.0)
 
-    def _reader_loop(self):
+    def _reader_loop(self, required_amount):
         """Continuously read lines and parse them."""
         print("[CoinHandlerSerial] reader started")
         while self._reader_running:
@@ -172,7 +171,7 @@ class CoinHandlerSerial:
                     continue
 
                 print("[ARDUINO]", line)
-                self._parse_line(line)
+                self._parse_line(line, required_amount)
 
             except Exception as e:
                 if not self._reader_running:
@@ -183,7 +182,7 @@ class CoinHandlerSerial:
         print("[CoinHandlerSerial] reader stopped")
 
 
-    def _parse_line(self, line: str):
+    def _parse_line(self, line: str, required_amount):
         # Possible formats expected from Arduino:
         # COIN:<denom>
         # SORT_DONE:<denom>
@@ -198,7 +197,7 @@ class CoinHandlerSerial:
         if tag == "COIN" and len(parts) >= 2:
             try:
                 denom = int(parts[1])
-                self._handle_coin(denom)
+                self._handle_coin(denom, required_amount)
             except Exception as e:
                 print("[CoinHandlerSerial] malformed COIN line:", line, e)
 
@@ -207,7 +206,7 @@ class CoinHandlerSerial:
             try:
                 pulses = int(parts[1])
                 denom = self._map_pulses_to_denom(pulses)
-                self._handle_coin(denom)
+                self._handle_coin(denom, required_amount)
             except Exception as e:
                 print("[CoinHandlerSerial] malformed PULSE line:", line, e)
 
@@ -233,7 +232,7 @@ class CoinHandlerSerial:
                 denom = int(parts[1])
                 qty = int(parts[2])
                 # Deduct from coin storage
-                actual = self.coin_storage.deduct(denom, qty)
+                actual = self.storage.deduct(denom, qty)
                 print(f"[CoinHandlerSerial] DISPENSE_DONE -> {denom} x{actual}")
                 for cb in self._dispense_done_callbacks:
                     cb(denom, actual)
@@ -251,7 +250,7 @@ class CoinHandlerSerial:
             print("[CoinHandlerSerial] Unknown msg:", line)
 
 
-    def _handle_coin(self, denom: int):
+    def _handle_coin(self, denom: int, required_amount):
         with self._lock:
             if denom not in self.session_counts:
                 print("[CoinHandlerSerial] unsupported denom received:", denom)
@@ -262,7 +261,7 @@ class CoinHandlerSerial:
             self.total_value += denom
 
             # Persist to coin storage (machine's stock increases when user inserts coin)
-            new_storage_count = self.coin_storage.add(denom, 1)
+            new_storage_count = self.storage.add(denom, 1)
 
             # Notify callbacks (denom, count_for_denom_in_session, total_value)
             for cb in self._callbacks:
@@ -271,7 +270,7 @@ class CoinHandlerSerial:
                 except Exception as e:
                     print("[CoinHandlerSerial] callback error:", e)
 
-            if self.total_value >= self.required_fee and not self._reached_emitted:
+            if self.total_value >= self.required_amount and not self._reached_emitted:
                 self._reached_emitted = True
                 print("[CoinHandlerSerial] required fee reached; sending DISABLE_COIN")
 
