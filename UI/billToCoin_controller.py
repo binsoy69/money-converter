@@ -134,11 +134,10 @@ class BillCoinConverter(QStackedWidget):
         ], self.go_to_main)
 
         self.amount_fee_mapping = {
-            20: 3, 40: 3,
-            50: 5, 60: 5, 70: 5,
-            80: 8, 90: 8, 100: 8,
-            110: 10, 120: 10, 150: 10,
-            160: 15, 170: 15, 200: 15
+            20: 2,
+            50: 3,
+            100: 5,
+            200: 7
         }
 
         self.button_amount_mapping = {
@@ -205,17 +204,6 @@ class BillCoinConverter(QStackedWidget):
         for btn in buttons:
             btn.clicked.connect(lambda checked=False, b=btn: slot_function(b))
 
-    # for resetting buttons after transaction
-    def resetButtons(self):
-        # Reset selected amount and button
-        self.selected_amount = 0
-        self.selected_button = None
-        self.selected_fee = 0
-        self.converter_service_proceed.setEnabled(False)
-        # Reset button styles
-        for btn in self.s_amount_buttons:
-            btn.setStyleSheet(self.NORMAL_STYLE)
-
     #TIME AND DATE
     def update_time(self):
         current_time = QTime.currentTime().toString("h:mm AP")
@@ -275,6 +263,7 @@ class BillCoinConverter(QStackedWidget):
         if self.timer.isActive():
             self.timer.stop()
             print("[BillCoinConverter] stop_countdown called - Timer manually stopped")
+
 
     # -- Navigation Methods --
     def navigate(self, index):
@@ -414,7 +403,19 @@ class BillCoinConverter(QStackedWidget):
 
     # --- END NAVIGATION ---
 
-    # --- Helper functions ---
+    #  --- HELPER FUNCTIONS --- 
+
+    # for resetting buttons after transaction
+    def resetButtons(self):
+        # Reset selected amount and button
+        self.selected_amount = 0
+        self.selected_button = None
+        self.selected_fee = 0
+        self.converter_service_proceed.setEnabled(False)
+        # Reset button styles
+        for btn in self.s_amount_buttons:
+            btn.setStyleSheet(self.NORMAL_STYLE)
+
     def reset_transaction_state(self):
         """Reset all money-related state variables before a new transaction."""
         self.inserted_bill_amount = 0
@@ -437,7 +438,7 @@ class BillCoinConverter(QStackedWidget):
             self.coin_labels[denom].setText("0")
 
     def update_dashboard_checkboxes(self):
-        # Get displayed selected amount from the label only
+        # get selected amount
         selected_amount = self.selected_amount
 
         # Get latest storage state
