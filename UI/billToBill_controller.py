@@ -32,6 +32,19 @@ class BillBillConverter(QStackedWidget):
         }
     """
 
+     # Page index constants
+    PAGE_transFrame = 0
+    PAGE_confirmationFrame = 1
+    PAGE_insertBill = 2
+    PAGE_dashboardFrame = 3
+    PAGE_insertCoin = 4
+    PAGE_insufficient = 5
+    PAGE_exclamation_notequal = 6
+    PAGE_transactionFee = 7
+    PAGE_summary = 8
+    PAGE_successfullyDispensed = 9
+    PAGE_dispensing = 10
+
     def __init__(self, parent=None, navigate=None, bill_handler=None, coin_handler=None):
         super().__init__(parent)
         ui_path = os.path.join(os.path.dirname(__file__), "BillToBill.ui")
@@ -52,42 +65,55 @@ class BillBillConverter(QStackedWidget):
 
         # Setup
         self.connect_buttons(self.s_amount_buttons, self.select_s_amount_button)
+        
         self.connect_buttons([
             self.converter_select_backBtn
         ], self.go_back_to_service)
+        
         self.connect_buttons([
             self.converter_service_proceed
         ], self.go_to_cb_confirm)
+        
         self.connect_buttons([
             self.cb_confirm_backBtn
         ], self.go_back_to_trans)
+        
         self.connect_buttons([
             self.cb_confirm_proceed
         ], self.go_to_cb_insert)
+        
         self.connect_buttons([
             self.cb_insert_proceed
         ], self.go_to_cb_dashboard)
+        
         self.connect_buttons([
             self.cb_insertCoins_proceed
         ], self.go_to_cb_insertcoins)
+        
         self.connect_buttons([
             self.cb_insert_proceed_3
         ], self.go_to_cb_dashboard2)
+        
         self.connect_buttons([
             self.cb_confirm_deduct
         ], self.go_to_cb_deduct)
+        
         self.connect_buttons([
             self.cb_dashboard_proceed
         ], self.go_to_cb_summary)
+        
         self.connect_buttons([
             self.cb_summary_back
         ], self.go_back_cb_db)
+        
         self.connect_buttons([
             self.cb_summary_proceed
         ], self.go_to_cb_dispnese)
+        
         self.connect_buttons([
             self.cb_insertCoins_proceed_2
         ], self.go_to_main_types)
+        
         self.connect_buttons([
             self.cb_exit
         ], self.go_to_main)

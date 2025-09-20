@@ -3443,10 +3443,7 @@ QToolButton:pressed {
      </property>
      <property name="font">
       <font>
-       <family>Montserrat</family>
        <pointsize>-1</pointsize>
-       <weight>75</weight>
-       <bold>true</bold>
       </font>
      </property>
      <property name="styleSheet">
@@ -3504,10 +3501,7 @@ QCheckBox::indicator:disabled {
      </property>
      <property name="font">
       <font>
-       <family>Montserrat</family>
        <pointsize>-1</pointsize>
-       <weight>75</weight>
-       <bold>true</bold>
       </font>
      </property>
      <property name="styleSheet">
@@ -3564,10 +3558,7 @@ QCheckBox::indicator:disabled {
      </property>
      <property name="font">
       <font>
-       <family>Montserrat</family>
        <pointsize>-1</pointsize>
-       <weight>75</weight>
-       <bold>true</bold>
       </font>
      </property>
      <property name="styleSheet">
@@ -3625,10 +3616,7 @@ QCheckBox::indicator:disabled {
      </property>
      <property name="font">
       <font>
-       <family>Montserrat</family>
        <pointsize>-1</pointsize>
-       <weight>75</weight>
-       <bold>true</bold>
       </font>
      </property>
      <property name="styleSheet">
@@ -3734,10 +3722,7 @@ QPushButton:pressed {
      </property>
      <property name="font">
       <font>
-       <family>Montserrat</family>
        <pointsize>-1</pointsize>
-       <weight>75</weight>
-       <bold>true</bold>
       </font>
      </property>
      <property name="styleSheet">
@@ -6350,7 +6335,7 @@ QToolButton:pressed {
       <string/>
      </property>
      <property name="pixmap">
-      <pixmap>D:/Coinnect UI/images/new-moon.png</pixmap>
+      <pixmap>images/new-moon.png</pixmap>
      </property>
      <property name="scaledContents">
       <bool>true</bool>
@@ -6396,7 +6381,7 @@ QToolButton:pressed {
       <string/>
      </property>
      <property name="pixmap">
-      <pixmap>D:/Coinnect UI/images/new-moon.png</pixmap>
+      <pixmap>images/new-moon.png</pixmap>
      </property>
      <property name="scaledContents">
       <bool>true</bool>
@@ -6415,7 +6400,7 @@ QToolButton:pressed {
       <string/>
      </property>
      <property name="pixmap">
-      <pixmap>D:/Coinnect UI/images/new-moon.png</pixmap>
+      <pixmap>images/new-moon.png</pixmap>
      </property>
      <property name="scaledContents">
       <bool>true</bool>
@@ -6434,7 +6419,7 @@ QToolButton:pressed {
       <string/>
      </property>
      <property name="pixmap">
-      <pixmap>D:/Coinnect UI/images/new-moon.png</pixmap>
+      <pixmap>images/new-moon.png</pixmap>
      </property>
      <property name="scaledContents">
       <bool>true</bool>
@@ -6453,7 +6438,7 @@ QToolButton:pressed {
       <string/>
      </property>
      <property name="pixmap">
-      <pixmap>D:/Coinnect UI/images/new-moon.png</pixmap>
+      <pixmap>images/new-moon.png</pixmap>
      </property>
      <property name="scaledContents">
       <bool>true</bool>
@@ -6472,7 +6457,7 @@ QToolButton:pressed {
       <string/>
      </property>
      <property name="pixmap">
-      <pixmap>D:/Coinnect UI/images/new-moon.png</pixmap>
+      <pixmap>images/new-moon.png</pixmap>
      </property>
      <property name="scaledContents">
       <bool>true</bool>
