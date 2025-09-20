@@ -6,6 +6,7 @@ import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from workers.threads import *
+from demo.bill_to_bill_converter import *
 
 class BillBillConverter(QStackedWidget):
     CLICKED_STYLE = """
@@ -349,7 +350,7 @@ class BillBillConverter(QStackedWidget):
         self.update_dashboard_checkboxes()
 
         self.navigate(self.PAGE_dashboardFrame)
-        print("[BillCoinConverter] go_to_cb_dashboard2 called - navigating index 3")
+        print("[BillBillConverter] go_to_cb_dashboard2 called - navigating index 3")
 
     def go_to_cb_summary(self, _=None):
         self.cb_summary_transactionType.setText(self.label_116.text())
@@ -371,16 +372,29 @@ class BillBillConverter(QStackedWidget):
         # Finally, navigate to summary tab
         self.navigate(self.PAGE_summary)
 
-        print(f"[BillCoinConverter] go_to_cb_summary - Denominations: {denominations}")
+        print(f"[BillBillConverter] go_to_cb_summary - Denominations: {denominations}")
 
     def go_back_cb_db(self, _=None):
         print("[BillBillConverter] go_back_cb_db() called - index 3")
         self.navigate(3)
 
     def go_to_cb_dispense(self, _=None):
-        # TODO: Bill and Coin dispensing
-        self.navigate(self.PAGE_dashboardFrame)
-        print("[BillBillConverter] go_to_cb_dispnese() called - index 9")
+        if self.convert_coin_to_bill():
+            self.navigate(self.PAGE_dispensing)
+            # TODO: code for dispensing bill
+            # -- code here --
+            # Dispense coin
+            if self.coin_breakdown:
+                # Create and start dispense worker
+                self.dispense_worker = CoinDispenserWorker(handler=self.coin_handler, breakdown=self.coin_breakdown)
+                self.dispense_worker.dispenseAck.connect(self.on_dispense_ack)
+                self.dispense_worker.dispenseDone.connect(self.on_dispense_done)
+                self.dispense_worker.dispenseError.connect(self.on_dispense_error)
+                self.dispense_worker.finished.connect(self.on_dispense_finished)
+                self.dispense_worker.start()
+        else:
+            print("[BillBillConverter] Conversion failed")
+            self.navigate(self.PAGE_insufficient)
         
 
      # --- END NAVIGATION ---
@@ -478,8 +492,32 @@ class BillBillConverter(QStackedWidget):
 
 
     def convert_bill_to_bill(self, _=None):
-        pass
+        """
+        Wrapper that calls the coin_converter module.
+        Uses self.total_amount_to_dispense and user-selected checkboxes.
+        """
+        amount = self.total_amount_to_dispense
+        if amount <= 0:
+            print("[Convert] Nothing to dispense.")
+            return False
 
+        # Get selected denominations from checkboxes
+        selected_denoms = self.get_selected_denoms()
+        if not selected_denoms:
+            selected_denoms = [500, 200, 100, 50, 20]  # auto mode
+
+        # Use global coin_storage (already in your class)
+        bill_storage = self.bill_handler.storage.get_storage()
+        coin_storage = self.coin_handler.storage.get_storage()
+
+        # --- Simulation ---
+        self.bill_breakdown, self.coin_breakdown = convert_bill_to_bills(amount, selected_denoms, bill_storage, coin_storage)
+
+        if not self.bill_breakdown:
+            print("[Convert] ERROR: Cannot dispense with available coins.")
+            return False
+
+        return True
     
     # --- BILL HANDLING LOGIC ---
     def handle_bill_insertion(self):
