@@ -256,7 +256,7 @@ class PiBillHandler:
     def accept_bill(
         self,
         required_denom: int,
-        motor_forward_ms: int = 500,
+        motor_forward_ms: int = 800,
         motor_reverse_ms: int = 1000,
         push_after_sort_ms: int = 500,
         wait_for_ir_timeout_s: int = 60,
