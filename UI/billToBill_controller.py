@@ -63,8 +63,7 @@ class BillBillConverter(QStackedWidget):
 
         # Buttons
         self.s_amount_buttons = [
-            self.converter_trans_b2cBtn50, self.converter_trans_b2cBtn100, self.converter_trans_b2cBtn200, self.converter_trans_b2cBtn300, self.converter_trans_b2cBtn400,
-            self.converter_trans_b2cBtn500, self.converter_trans_b2cBtn600, self.converter_trans_b2cBtn700, self.converter_trans_b2cBtn800, self.converter_trans_b2cBtn900, self.converter_trans_b2cBtn1000
+            self.converter_trans_b2cBtn50, self.converter_trans_b2cBtn100, self.converter_trans_b2cBtn200, self.converter_trans_b2cBtn500, self.converter_trans_b2cBtn1000
         ]
 
         # Setup
