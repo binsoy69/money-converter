@@ -1,28 +1,31 @@
-from gpiozero import Servo
+import pigpio
 from time import sleep
 
-# === CONFIG ===
-SERVO_PIN = 21            # BCM GPIO pin where servo is connected
-PUSH_ANGLE = 90           # degrees
-RESET_ANGLE = 0           # degrees
-DISPENSE_TIME = 0.02      # seconds (20 ms, adjust as needed)
-COUNT = 3                 # how many cycles
+SERVO_PIN = 21
+PUSH_ANGLE = 90
+RESET_ANGLE = 0
+DISPENSE_TIME = 0.02
+COUNT = 3
 
-# gpiozero Servo expects values from -1 to +1, so convert degrees to range
-def angle_to_value(angle):
-    return (angle / 90.0) - 1  # 0° -> -1, 90° -> 0, 180° -> +1
+# Servo pulse widths (microseconds) – adjust if needed
+MIN_PW = 500   # 0 degrees
+MAX_PW = 2500  # 180 degrees
 
-servo = Servo(SERVO_PIN)
+def angle_to_pulse(angle):
+    return int(MIN_PW + (angle / 180.0) * (MAX_PW - MIN_PW))
+
+pi = pigpio.pi()
+if not pi.connected:
+    exit()
 
 for i in range(COUNT):
-    # Sweep from PUSH_ANGLE to RESET_ANGLE
     for pos in range(PUSH_ANGLE, RESET_ANGLE - 1, -1):
-        servo.value = angle_to_value(pos)
+        pi.set_servo_pulsewidth(SERVO_PIN, angle_to_pulse(pos))
         sleep(DISPENSE_TIME)
-    
-    # Sweep from RESET_ANGLE to PUSH_ANGLE
     for pos in range(RESET_ANGLE, PUSH_ANGLE + 1):
-        servo.value = angle_to_value(pos)
+        pi.set_servo_pulsewidth(SERVO_PIN, angle_to_pulse(pos))
         sleep(DISPENSE_TIME)
-    
     sleep(0.3)
+
+pi.set_servo_pulsewidth(SERVO_PIN, 0)  # turn off servo
+pi.stop()
