@@ -307,18 +307,105 @@ class PiBillHandler:
         self.motor_stop()
         return True, denom, "accepted"
 
-    def dispense_bill(self, denom: int, qty: int = 1, dispense_time_ms: int = 1500) -> Tuple[bool, str]:
-        """Dispense bills by timed motor runs."""
-        for _ in range(qty):
+    def dispense_bill(self, denom: int, qty: int = 1, dispense_time_ms: int = 1500, serial_timeout_s: float = 10.0) -> Tuple[bool, str]:
+        """
+        Step-by-step handshake dispensing:
+        1) Send PREP_DISPENSE:{denom}:{qty} to Arduino
+        2) Wait for 'READY'
+        3) For each bill: run DC motor for dispense_time_ms, send MOTOR_DONE:{i}, wait for 'ACK'
+        4) After all, wait for 'DONE' from Arduino
+        Returns (True,"dispensed") or (False,"reason")
+        """
+        try:
+            # If no Arduino connected, just run motor cycles (mock/fallback)
+            if self.sorter_serial is None:
+                for i in range(qty):
+                    self.motor_forward()
+                    time.sleep(dispense_time_ms / 1000.0)
+                    self.motor_stop()
+                    time.sleep(0.3)
+                return True, "dispensed_no_arduino"
+
+            # 1) ask Arduino to prepare (H-bot down, move to denom, servo A push-in, servo B angle)
+            prep_cmd = f"PREP_DISPENSE:{denom}:{qty}\n"
             try:
-                # change motor to dispenser motor here
+                self.sorter_serial.write(prep_cmd.encode("utf-8"))
+            except Exception as e:
+                return False, f"serial_write_failed:{e}"
+
+            # helper: read lines until timeout
+            deadline = time.time() + serial_timeout_s
+            ready = False
+            while time.time() < deadline:
+                raw = self.sorter_serial.readline()
+                if not raw:
+                    continue
+                line = raw.decode("utf-8", errors="ignore").strip() if isinstance(raw, bytes) else str(raw).strip()
+                if not line:
+                    continue
+                # Arduino should reply 'READY' when it's positioned
+                if "READY" in line:
+                    ready = True
+                    break
+                if "ERR" in line or "ERROR" in line:
+                    return False, f"arduino_prep_error:{line}"
+            if not ready:
+                return False, "no_ready_from_arduino"
+
+            # 2) For each bill: run DC motor then notify Arduino
+            for i in range(qty):
+                # run DC motor (time-based)
                 self.motor_forward()
                 time.sleep(dispense_time_ms / 1000.0)
                 self.motor_stop()
-                time.sleep(0.3)
-            except Exception as e:
-                return False, f"motor_error:{e}"
-        return True, "dispensed"
+
+                # notify Arduino that motor cycle finished
+                done_cmd = f"MOTOR_DONE:{denom}:{i+1}\n"
+                try:
+                    self.sorter_serial.write(done_cmd.encode("utf-8"))
+                except Exception as e:
+                    return False, f"serial_write_failed_after_motor:{e}"
+
+                # wait for ACK before next cycle
+                ack_deadline = time.time() + serial_timeout_s
+                ack_ok = False
+                while time.time() < ack_deadline:
+                    raw = self.sorter_serial.readline()
+                    if not raw:
+                        continue
+                    line = raw.decode("utf-8", errors="ignore").strip() if isinstance(raw, bytes) else str(raw).strip()
+                    if not line:
+                        continue
+                    if "ACK" in line or "OK" == line or line.endswith("OK"):
+                        ack_ok = True
+                        break
+                    if "ERR" in line or "ERROR" in line:
+                        return False, f"arduino_error_during_cycle:{line}"
+                if not ack_ok:
+                    return False, "no_ack_from_arduino"
+
+            # 3) Wait for Arduino to finish retracting / moving away after all cycles
+            finish_deadline = time.time() + serial_timeout_s
+            finished = False
+            while time.time() < finish_deadline:
+                raw = self.sorter_serial.readline()
+                if not raw:
+                    continue
+                line = raw.decode("utf-8", errors="ignore").strip() if isinstance(raw, bytes) else str(raw).strip()
+                if not line:
+                    continue
+                if "DONE" in line or "FINISHED" in line:
+                    finished = True
+                    break
+                if "ERR" in line or "ERROR" in line:
+                    return False, f"arduino_finish_error:{line}"
+            if not finished:
+                return False, "no_done_from_arduino"
+
+            return True, "dispensed"
+        except Exception as e:
+            return False, f"exception:{e}"
+
 
     def cleanup(self):
         try:
