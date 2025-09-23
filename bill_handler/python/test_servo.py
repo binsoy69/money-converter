@@ -1,36 +1,26 @@
-import RPi.GPIO as GPIO
-import time
+from gpiozero import AngularServo
+from time import sleep
 
-# Setup
-servo_pin = 21  # Use a PWM-capable GPIO pin
-GPIO.setmode(GPIO.BCM)
-GPIO.setup(servo_pin, GPIO.OUT)
+# Setup: adjust pulse widths if needed for your servo model
+servo = AngularServo(18, min_pulse_width=0.0006, max_pulse_width=0.0023)
 
-# Initialize PWM at 50Hz
-pwm = GPIO.PWM(servo_pin, 50)
-pwm.start(0)
-
-def angle_to_duty_cycle(angle):
-    # Convert angle (0-180) to duty cycle (2.5-12.5)
-    return 2.5 + (angle / 180.0) * 10
+print("Servo ready. Enter angle between -90 and 90 (or 'q' to quit).")
 
 try:
     while True:
-        user_input = input("Enter angle (0 to 180, or 'q' to quit): ")
+        user_input = input("Enter angle: ")
         if user_input.lower() == 'q':
+            print("Exiting...")
             break
         try:
             angle = float(user_input)
-            if 0 <= angle <= 180:
-                duty_cycle = angle_to_duty_cycle(angle)
-                pwm.ChangeDutyCycle(duty_cycle)
-                time.sleep(0.5)
-                pwm.ChangeDutyCycle(0)  # Stop signal to avoid jitter
+            if -90 <= angle <= 90:
+                servo.angle = angle
+                print(f"Moved to {angle}°")
+                sleep(1)
             else:
-                print("Angle must be between 0 and 180.")
+                print("⚠️ Angle must be between -90 and 90.")
         except ValueError:
-            print("Invalid input. Please enter a number.")
-finally:
-    pwm.stop()
-    GPIO.cleanup()
-    print("Program terminated.")
+            print("⚠️ Invalid input. Please enter a number or 'q'.")
+except KeyboardInterrupt:
+    print("\nInterrupted by user.")
