@@ -1,36 +1,36 @@
-import pigpio
-from time import sleep
+import RPi.GPIO as GPIO
+import time
 
-SERVO_PIN = 21
-MIN_PW = 500   # 0 degrees
-MAX_PW = 2500  # 180 degrees
+# Setup
+servo_pin = 21  # Use a PWM-capable GPIO pin
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(servo_pin, GPIO.OUT)
 
-def angle_to_pulse(angle):
-    return int(MIN_PW + (angle / 180.0) * (MAX_PW - MIN_PW))
+# Initialize PWM at 50Hz
+pwm = GPIO.PWM(servo_pin, 50)
+pwm.start(0)
 
-pi = pigpio.pi()
-if not pi.connected:
-    print("Failed to connect to pigpio daemon. Did you run 'sudo pigpiod'?")
-    exit()
+def angle_to_duty_cycle(angle):
+    # Convert angle (0-180) to duty cycle (2.5-12.5)
+    return 2.5 + (angle / 180.0) * 10
 
 try:
     while True:
-        angle = input("Enter angle (0-180, or 'q' to quit): ").strip()
-        if angle.lower() == "q":
+        user_input = input("Enter angle (0 to 180, or 'q' to quit): ")
+        if user_input.lower() == 'q':
             break
         try:
-            angle = float(angle)
+            angle = float(user_input)
             if 0 <= angle <= 180:
-                pi.set_servo_pulsewidth(SERVO_PIN, angle_to_pulse(angle))
+                duty_cycle = angle_to_duty_cycle(angle)
+                pwm.ChangeDutyCycle(duty_cycle)
+                time.sleep(0.5)
+                pwm.ChangeDutyCycle(0)  # Stop signal to avoid jitter
             else:
-                print("⚠️ Please enter a value between 0 and 180")
+                print("Angle must be between 0 and 180.")
         except ValueError:
-            print("⚠️ Invalid input. Enter a number or 'q' to quit.")
-
-except KeyboardInterrupt:
-    print("\nExiting...")
-
+            print("Invalid input. Please enter a number.")
 finally:
-    pi.set_servo_pulsewidth(SERVO_PIN, 0)  # turn off servo
-    pi.stop()
-    print("Servo released and pigpio stopped.")
+    pwm.stop()
+    GPIO.cleanup()
+    print("Program terminated.")
