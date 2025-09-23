@@ -2,12 +2,6 @@ import pigpio
 from time import sleep
 
 SERVO_PIN = 21
-PUSH_ANGLE = 90
-RESET_ANGLE = 0
-DISPENSE_TIME = 0.02
-COUNT = 3
-
-# Servo pulse widths (microseconds) – adjust if needed
 MIN_PW = 500   # 0 degrees
 MAX_PW = 2500  # 180 degrees
 
@@ -16,13 +10,27 @@ def angle_to_pulse(angle):
 
 pi = pigpio.pi()
 if not pi.connected:
+    print("Failed to connect to pigpio daemon. Did you run 'sudo pigpiod'?")
     exit()
 
-while True:
-    angle = input("Enter angle (0-180): ")
-    angle = float(angle)
-    pi.set_servo_pulsewidth(SERVO_PIN, angle_to_pulse(angle))
+try:
+    while True:
+        angle = input("Enter angle (0-180, or 'q' to quit): ").strip()
+        if angle.lower() == "q":
+            break
+        try:
+            angle = float(angle)
+            if 0 <= angle <= 180:
+                pi.set_servo_pulsewidth(SERVO_PIN, angle_to_pulse(angle))
+            else:
+                print("⚠️ Please enter a value between 0 and 180")
+        except ValueError:
+            print("⚠️ Invalid input. Enter a number or 'q' to quit.")
 
+except KeyboardInterrupt:
+    print("\nExiting...")
 
-pi.set_servo_pulsewidth(SERVO_PIN, 0)  # turn off servo
-pi.stop()
+finally:
+    pi.set_servo_pulsewidth(SERVO_PIN, 0)  # turn off servo
+    pi.stop()
+    print("Servo released and pigpio stopped.")
