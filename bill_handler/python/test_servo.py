@@ -20,6 +20,7 @@ if not pi.connected:
 
 while True:
     angle = input("Enter angle (0-180): ")
+    angle = float(angle)
     pi.set_servo_pulsewidth(SERVO_PIN, angle_to_pulse(angle))
 
 
