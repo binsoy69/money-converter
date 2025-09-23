@@ -18,14 +18,10 @@ pi = pigpio.pi()
 if not pi.connected:
     exit()
 
-for i in range(COUNT):
-    for pos in range(PUSH_ANGLE, RESET_ANGLE - 1, -1):
-        pi.set_servo_pulsewidth(SERVO_PIN, angle_to_pulse(pos))
-        sleep(DISPENSE_TIME)
-    for pos in range(RESET_ANGLE, PUSH_ANGLE + 1):
-        pi.set_servo_pulsewidth(SERVO_PIN, angle_to_pulse(pos))
-        sleep(DISPENSE_TIME)
-    sleep(0.3)
+while True:
+    angle = input("Enter angle (0-180): ")
+    pi.set_servo_pulsewidth(SERVO_PIN, angle_to_pulse(angle))
+
 
 pi.set_servo_pulsewidth(SERVO_PIN, 0)  # turn off servo
 pi.stop()
