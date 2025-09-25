@@ -332,20 +332,36 @@ class CoinBillConverter(QStackedWidget):
     def go_to_cb_dispense(self, _=None):
         if self.convert_coin_to_bill():
             self.navigate(self.PAGE_dispensing)
-            # TODO: code for dispensing bill
-            # -- code here --
-            # Dispense coin
+
+            # --- Bill Dispenser ---
+            if self.bill_breakdown:
+                self.bill_dispense_worker = BillDispenserWorker(
+                    breakdown=self.bill_breakdown,
+                    handler=self.bill_handler,
+                    dispense_time_ms=1500
+                )
+                self.bill_dispense_worker.dispenseAck.connect(self.on_dispense_ack)
+                self.bill_dispense_worker.dispenseDone.connect(self.on_dispense_done)
+                self.bill_dispense_worker.dispenseError.connect(self.on_dispense_error)
+                self.bill_dispense_worker.finished.connect(self.on_dispense_finished)
+                self.bill_dispense_worker.start()
+
+            # --- Coin Dispenser ---
             if self.coin_breakdown:
-                # Create and start dispense worker
-                self.dispense_worker = CoinDispenserWorker(handler=self.coin_handler, breakdown=self.coin_breakdown)
+                self.dispense_worker = CoinDispenserWorker(
+                    handler=self.coin_handler,
+                    breakdown=self.coin_breakdown
+                )
                 self.dispense_worker.dispenseAck.connect(self.on_dispense_ack)
                 self.dispense_worker.dispenseDone.connect(self.on_dispense_done)
                 self.dispense_worker.dispenseError.connect(self.on_dispense_error)
                 self.dispense_worker.finished.connect(self.on_dispense_finished)
                 self.dispense_worker.start()
+
         else:
-            print("[CoinBillConverter] Conversion failed")
+            print("[BillBillConverter] Conversion failed")
             self.navigate(self.PAGE_insufficient)
+
 
     def go_back_cb_dashboard(self, _=None):
         self.navigate(self.PAGE_dashboardFrame)
