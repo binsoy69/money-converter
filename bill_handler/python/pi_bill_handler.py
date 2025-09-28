@@ -161,7 +161,7 @@ class PiBillHandler:
         self.sorter_serial = None
         print("[PiBillHandler] sorter serial not available (mock mode)")
 
-    def sort_via_arduino(self, denom: int, timeout_s: float = 10.0) -> bool:
+    def sort_via_arduino(self, denom: int, timeout_s: float = 60.0) -> bool:
         cmd = f"SORT:{denom}\n"
         if self.sorter_serial is None:
             print("[PiBillHandler] sorter serial missing; assuming success (mock).")
