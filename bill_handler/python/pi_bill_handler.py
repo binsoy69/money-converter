@@ -48,7 +48,7 @@ except Exception:
     YOLO = None
 
 # Storage
-from .bill_storage import BillStorage
+from bill_storage import BillStorage
 
 
 class PiBillHandler:
