@@ -258,7 +258,7 @@ class PiBillHandler:
         required_denom: int,
         motor_forward_ms: int = 800,
         motor_reverse_ms: int = 1000,
-        push_after_sort_ms: int = 500,
+        push_after_sort_ms: int = 1000,
         wait_for_ir_timeout_s: int = 60,
     ) -> Tuple[bool, Optional[int], str]:
         """Full accept flow (blocking)."""
@@ -301,8 +301,9 @@ class PiBillHandler:
             self.motor_stop()
             return False, denom, "sorter_no_ack"
 
-        self.storage.add(denom, 1)
+        # Successfully sorted; push into storage
         self.motor_forward()
+        self.storage.add(denom, 1)
         time.sleep(push_after_sort_ms / 1000.0)
         self.motor_stop()
         return True, denom, "accepted"
