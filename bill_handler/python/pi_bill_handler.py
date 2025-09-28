@@ -13,32 +13,25 @@ from typing import Optional, Tuple
 
 # --- GPIOZero setup ---
 try:
-    from gpiozero import Motor as GPIOMotor, PWMOutputDevice as GPIOPWM, DigitalInputDevice as GPIODigital, LED as GPIOLed
+    from gpiozero import Motor, PWMOutputDevice, DigitalInputDevice, LED, Device
     ON_RPI = True
 except Exception:
     ON_RPI = False
-    GPIOMotor = None
-    GPIOPWM = None
-    GPIODigital = None
-    GPIOLed = None
-
-# --- Mock classes for dev/off-Pi testing ---
-class MockMotor:
-    def forward(self): print("[MockMotor] forward")
-    def backward(self): print("[MockMotor] backward")
-    def stop(self): print("[MockMotor] stop")
-    def close(self): print("[MockMotor] close")
-
-class MockPWM:
-    def __init__(self, pin): self.value = 0
-    def off(self): self.value = 0
-
-class MockDigital:
-    def __init__(self, pin, pull_up=True): self.value = 1
-
-class MockLED:
-    def on(self): print("[MockLED] on")
-    def off(self): print("[MockLED] off")
+    # mocks for dev/off-Pi testing
+    class Motor:
+        def __init__(self, forward, backward): pass
+        def forward(self): print("[MockMotor] forward")
+        def backward(self): print("[MockMotor] backward")
+        def stop(self): print("[MockMotor] stop")
+    class PWMOutputDevice:
+        def __init__(self, pin): self.value = 0
+        def off(self): self.value = 0
+    class DigitalInputDevice:
+        def __init__(self, pin, pull_up=True): self.value = 1
+    class LED:
+        def __init__(self, pin): pass
+        def on(self): print("[MockWhite] ON")
+        def off(self): print("[MockWhite] OFF")
 
 # Serial
 try:
@@ -55,7 +48,7 @@ except Exception:
     YOLO = None
 
 # Storage
-from bill_storage import BillStorage
+from .bill_storage import BillStorage
 
 
 class PiBillHandler:
@@ -85,16 +78,15 @@ class PiBillHandler:
         self.use_hardware = ON_RPI if use_hardware is None else use_hardware
 
         if self.use_hardware and ON_RPI:
-            self.motor = GPIOMotor(forward=self.motor_forward_pin, backward=self.motor_backward_pin)
-            self.enable_pin = GPIOPWM(self.motor_enable_pin)
-            self.ir_sensor = GPIODigital(self.ir_pin)  # active-low
-            self.white_led = GPIOLed(self.white_led_pin)
+            self.motor = Motor(forward=self.motor_forward_pin, backward=self.motor_backward_pin)
+            self.enable_pin = PWMOutputDevice(self.motor_enable_pin)
+            self.ir_sensor = DigitalInputDevice(self.ir_pin)  # active-low
+            self.white_led = LED(self.white_led_pin)
         else:
-            self.motor = MockMotor()
-            self.enable_pin = MockPWM(0)
-            self.ir_sensor = MockDigital(0)
-            self.white_led = MockLED()
-
+            self.motor = Motor(forward=0, backward=0)
+            self.enable_pin = PWMOutputDevice(0)
+            self.ir_sensor = DigitalInputDevice(0)
+            self.white_led = LED(0)
 
         # Serial sorter
         self.sorter_serial = None
