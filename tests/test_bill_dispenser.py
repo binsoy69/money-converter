@@ -5,17 +5,18 @@ import sys
 # GPIO pins for Motor 1 (adjust as needed)
 MOTOR1_FORWARD_PIN = 20
 MOTOR1_BACKWARD_PIN = 21
-MOTOR1_ENABLE_PIN = 16 # PWM capable pin for speed control
-MOTOR1_SPEED = 0.8     # Speed for motor 1 (0.0 to 1.0)
+MOTOR1_ENABLE_PIN = 16  # PWM capable pin for speed control
+MOTOR1_SPEED = 0.5    # Speed for motor 1 (0.0 to 1.0)
 
 # GPIO pins for Motor 2 (adjust as needed)
-MOTOR2_FORWARD_PIN = 19
-MOTOR2_BACKWARD_PIN = 26
-MOTOR2_ENABLE_PIN = 13 # PWM capable pin for speed control
-MOTOR2_SPEED = 0.6     # Speed for motor 2 (0.0 to 1.0)
+MOTOR2_FORWARD_PIN = 26
+MOTOR2_BACKWARD_PIN = 19
+MOTOR2_ENABLE_PIN = 13  # PWM capable pin for speed control
+MOTOR2_SPEED = 0.3    # Speed for motor 2 (0.0 to 1.0)
 
-# Dispense duration
-DISPENSE_DURATION_SECONDS = 10
+# Durations
+DISPENSE_DURATION_SECONDS = 5       # Full dispense
+SINGLE_BILL_SECONDS = 0.35            # Time to dispense one bill (CHANGE THIS)
 
 # --- GPIOZero setup ---
 try:
@@ -24,7 +25,7 @@ try:
 except ImportError:
     print("gpiozero not found. Running in mock mode.")
     ON_RPI = False
-    # Mock classes for development/testing off-Pi
+
     class MockMotor:
         def __init__(self, forward, backward):
             self.forward_pin = forward
@@ -69,38 +70,40 @@ class BillDispenserTester:
         else:
             print("Running in mock mode (gpiozero not found).")
 
-        # Motor 1 setup
         self.motor1 = Motor(forward=MOTOR1_FORWARD_PIN, backward=MOTOR1_BACKWARD_PIN)
         self.motor1_enable = PWMOutputDevice(MOTOR1_ENABLE_PIN)
 
-        # Motor 2 setup
         self.motor2 = Motor(forward=MOTOR2_FORWARD_PIN, backward=MOTOR2_BACKWARD_PIN)
         self.motor2_enable = PWMOutputDevice(MOTOR2_ENABLE_PIN)
 
         print("BillDispenserTester initialized.")
 
-    def dispense(self):
-        print(f"\n--- Dispensing for {DISPENSE_DURATION_SECONDS} seconds ---")
-        
-        # Set speeds
+    def run_motors(self, duration):
         self.motor1_enable.value = MOTOR1_SPEED
         self.motor2_enable.value = MOTOR2_SPEED
 
-        # Run motors forward
         self.motor1.forward()
         self.motor2.forward()
+
         print(f"Motor 1 running at {MOTOR1_SPEED*100:.0f}%")
         print(f"Motor 2 running at {MOTOR2_SPEED*100:.0f}%")
 
-        time.sleep(DISPENSE_DURATION_SECONDS)
+        time.sleep(duration)
 
-        # Stop motors
         self.motor1.stop()
         self.motor2.stop()
         self.motor1_enable.off()
         self.motor2_enable.off()
-        print("Motors stopped.")
-        print("--- Dispense cycle complete ---")
+
+    def dispense(self):
+        print(f"\n--- Full Dispense ({DISPENSE_DURATION_SECONDS} sec) ---")
+        self.run_motors(DISPENSE_DURATION_SECONDS)
+        print("--- Full dispense complete ---")
+
+    def dispense_single_bill(self):
+        print(f"\n--- Dispensing ONE bill ({SINGLE_BILL_SECONDS} sec) ---")
+        self.run_motors(SINGLE_BILL_SECONDS)
+        print("--- Single bill dispense complete ---")
 
     def cleanup(self):
         print("\nCleaning up GPIO resources...")
@@ -119,10 +122,17 @@ if __name__ == "__main__":
     tester = None
     try:
         tester = BillDispenserTester()
-        print("\nPress ENTER to dispense bills. Press CTRL+C to exit.")
+        print("\nPress ENTER for FULL dispense.")
+        print("Type 'd' + ENTER to dispense ONE bill.")
+        print("Press CTRL+C to exit.\n")
+
         while True:
-            input("") # Wait for user to press Enter
-            tester.dispense()
+            cmd = input("> ").strip().lower()
+
+            if cmd == "d":
+                tester.dispense_single_bill()
+            else:
+                tester.dispense()
 
     except KeyboardInterrupt:
         print("\nExiting program.")
