@@ -4,10 +4,6 @@
 const int STEP_A_PIN = 2;
 const int DIR_A_PIN  = 3;
 
-// Optional: Stepper B pins (vertical - not used here)
-const int STEP_B_PIN = 4;
-const int DIR_B_PIN  = 5;
-
 // Ultrasonic pins
 const int TRIG_PIN = 6;
 const int ECHO_PIN = 7;

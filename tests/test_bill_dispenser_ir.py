@@ -6,7 +6,7 @@ import sys
 MOTOR1_FORWARD_PIN = 20
 MOTOR1_BACKWARD_PIN = 21
 MOTOR1_ENABLE_PIN = 16  # PWM capable pin for speed control
-MOTOR1_SPEED = 0.8      # Speed for motor 1 (0.0 to 1.0)
+MOTOR1_SPEED = 0.5      # Speed for motor 1 (0.0 to 1.0)
 
 # GPIO pins for Motor 2 (adjust as needed)
 MOTOR2_FORWARD_PIN = 19
@@ -15,11 +15,11 @@ MOTOR2_ENABLE_PIN = 13  # PWM capable pin for speed control
 MOTOR2_SPEED = 0.6      # Speed for motor 2 (0.0 to 1.0)
 
 # IR Sensor pin (for detecting dispensed bill)
-IR_SENSOR_PIN = 17      # IR sensor at dispenser output
+IR_SENSOR_PIN = 12      # IR sensor at dispenser output
 
 # Dispense settings
-DISPENSE_DURATION_SECONDS = 2.5  # Duration per dispense attempt
-MAX_RETRY_ATTEMPTS = 3           # Maximum retry attempts if bill not detected
+DISPENSE_DURATION_SECONDS = 0.2  # Duration per dispense attempt
+MAX_RETRY_ATTEMPTS = 5           # Maximum retry attempts if bill not detected
 IR_CHECK_DELAY = 0.5             # Delay before checking IR sensor after motor stops
 
 # --- GPIOZero setup ---
@@ -153,11 +153,11 @@ class BillDispenserIRTester:
             # Check IR sensor
             print("Checking IR sensor...")
             if self.check_ir_sensor():
-                print("✓ SUCCESS: Bill detected by IR sensor!")
+                print("SUCCESS: Bill detected by IR sensor!")
                 print(f"{'='*60}\n")
                 return True
             else:
-                print("✗ FAILED: No bill detected by IR sensor.")
+                print("FAILED: No bill detected by IR sensor.")
                 if attempt < MAX_RETRY_ATTEMPTS:
                     print(f"  Retrying... ({MAX_RETRY_ATTEMPTS - attempt} attempts remaining)")
                 else:
@@ -204,9 +204,9 @@ def main():
             if user_input == 'd' or user_input == '':
                 success = tester.dispense_with_verification()
                 if success:
-                    print("Status: ✓ Dispense successful\n")
+                    print("Status: Dispense successful\n")
                 else:
-                    print("Status: ✗ Dispense failed\n")
+                    print("Status: Dispense failed\n")
             else:
                 print("Invalid input. Press 'd' + ENTER or just ENTER to dispense.\n")
 
