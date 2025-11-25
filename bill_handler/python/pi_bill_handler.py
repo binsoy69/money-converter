@@ -5,11 +5,16 @@ Now uses gpiozero for hardware primitives:
  - IR sensor -> DigitalInputDevice (active-low)
  - Motor -> Motor + PWMOutputDevice for speed control
  - White LED -> LED
+ 
+Bill dispensing uses modular BillDispenser units:
+ - Each denomination has its own dispenser (2 motors + 1 IR sensor)
+ - Easy to add new denominations by registering new dispensers
+ - Arduino only handles bill acceptance sorting (not dispensing)
 """
 
 import time
 import os
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Dict
 
 # --- GPIOZero setup ---
 try:
@@ -23,15 +28,19 @@ except Exception:
         def forward(self): print("[MockMotor] forward")
         def backward(self): print("[MockMotor] backward")
         def stop(self): print("[MockMotor] stop")
+        def close(self): pass
     class PWMOutputDevice:
         def __init__(self, pin): self.value = 0
         def off(self): self.value = 0
+        def close(self): pass
     class DigitalInputDevice:
         def __init__(self, pin, pull_up=True): self.value = 1
+        def close(self): pass
     class LED:
         def __init__(self, pin): pass
         def on(self): print("[MockWhite] ON")
         def off(self): print("[MockWhite] OFF")
+        def close(self): pass
 
 # Serial
 try:
@@ -49,6 +58,108 @@ except Exception:
 
 # Storage
 from .bill_storage import BillStorage
+
+
+class BillDispenser:
+    """
+    Modular bill dispenser unit for a specific denomination.
+    Each dispenser has 2 motors and 1 IR sensor.
+    """
+    def __init__(
+        self,
+        denomination: int,
+        motor1_forward_pin: int,
+        motor1_backward_pin: int,
+        motor1_enable_pin: int,
+        motor1_speed: float,
+        motor2_forward_pin: int,
+        motor2_backward_pin: int,
+        motor2_enable_pin: int,
+        motor2_speed: float,
+        ir_sensor_pin: int,
+        use_hardware: bool = True
+    ):
+        self.denomination = denomination
+        self.motor1_speed = motor1_speed
+        self.motor2_speed = motor2_speed
+        
+        if use_hardware and ON_RPI:
+            self.motor1 = Motor(forward=motor1_forward_pin, backward=motor1_backward_pin)
+            self.motor1_enable = PWMOutputDevice(motor1_enable_pin)
+            self.motor2 = Motor(forward=motor2_forward_pin, backward=motor2_backward_pin)
+            self.motor2_enable = PWMOutputDevice(motor2_enable_pin)
+            self.ir_sensor = DigitalInputDevice(ir_sensor_pin)
+        else:
+            self.motor1 = Motor(forward=0, backward=0)
+            self.motor1_enable = PWMOutputDevice(0)
+            self.motor2 = Motor(forward=0, backward=0)
+            self.motor2_enable = PWMOutputDevice(0)
+            self.ir_sensor = DigitalInputDevice(0)
+    
+    def check_ir(self) -> bool:
+        """Check if bill is detected by IR sensor (active-low)."""
+        return not self.ir_sensor.value
+    
+    def run_motors(self, duration_s: float):
+        """Run both motors forward for specified duration."""
+        # Set speeds
+        self.motor1_enable.value = self.motor1_speed
+        self.motor2_enable.value = self.motor2_speed
+        
+        # Run motors forward
+        self.motor1.forward()
+        self.motor2.forward()
+        print(f"[Dispenser-{self.denomination}] Motors running at M1:{self.motor1_speed*100:.0f}%, M2:{self.motor2_speed*100:.0f}%")
+        
+        time.sleep(duration_s)
+        
+        # Stop motors
+        self.motor1.stop()
+        self.motor2.stop()
+        self.motor1_enable.off()
+        self.motor2_enable.off()
+        print(f"[Dispenser-{self.denomination}] Motors stopped")
+    
+    def dispense_single(
+        self,
+        dispense_duration_s: float = 0.2,
+        max_retry_attempts: int = 5,
+        ir_check_delay_s: float = 0.5
+    ) -> bool:
+        """
+        Attempt to dispense a single bill with IR verification and retry logic.
+        Returns True if successful, False otherwise.
+        """
+        for attempt in range(1, max_retry_attempts + 1):
+            print(f"[Dispenser-{self.denomination}] Attempt {attempt}/{max_retry_attempts}")
+            
+            # Run motors
+            self.run_motors(dispense_duration_s)
+            
+            # Wait for bill to settle
+            time.sleep(ir_check_delay_s)
+            
+            # Check IR sensor
+            if self.check_ir():
+                print(f"[Dispenser-{self.denomination}] Bill detected by IR sensor")
+                return True
+            else:
+                print(f"[Dispenser-{self.denomination}] No bill detected")
+                if attempt < max_retry_attempts:
+                    print(f"[Dispenser-{self.denomination}] Retrying... ({max_retry_attempts - attempt} attempts remaining)")
+        
+        return False
+    
+    def cleanup(self):
+        """Release GPIO resources."""
+        try:
+            self.motor1.close()
+            self.motor2.close()
+            self.motor1_enable.close()
+            self.motor2_enable.close()
+            self.ir_sensor.close()
+        except Exception as e:
+            print(f"[Dispenser-{self.denomination}] Cleanup failed: {e}")
 
 
 class PiBillHandler:
@@ -88,6 +199,9 @@ class PiBillHandler:
             self.ir_sensor = DigitalInputDevice(0)
             self.white_led = LED(0)
 
+        # Bill dispensers registry (denomination -> BillDispenser)
+        self.dispensers: Dict[int, BillDispenser] = {}
+
         # Serial sorter
         self.sorter_serial = None
         self._open_sorter_serial()
@@ -115,6 +229,50 @@ class PiBillHandler:
                 self.denom_labels = getattr(self.denom_model, "names", [])
             except Exception as e:
                 print("[PiBillHandler] YOLO model load failed:", e)
+
+    # -------------------------
+    # Dispenser Management
+    # -------------------------
+    def register_dispenser(
+        self,
+        denomination: int,
+        motor1_forward_pin: int,
+        motor1_backward_pin: int,
+        motor1_enable_pin: int,
+        motor1_speed: float,
+        motor2_forward_pin: int,
+        motor2_backward_pin: int,
+        motor2_enable_pin: int,
+        motor2_speed: float,
+        ir_sensor_pin: int
+    ):
+        """
+        Register a bill dispenser for a specific denomination.
+        This makes it easy to add new denominations in the future.
+        
+        Example:
+            handler.register_dispenser(
+                denomination=20,
+                motor1_forward_pin=20, motor1_backward_pin=21, motor1_enable_pin=16, motor1_speed=0.5,
+                motor2_forward_pin=19, motor2_backward_pin=26, motor2_enable_pin=13, motor2_speed=0.6,
+                ir_sensor_pin=12
+            )
+        """
+        dispenser = BillDispenser(
+            denomination=denomination,
+            motor1_forward_pin=motor1_forward_pin,
+            motor1_backward_pin=motor1_backward_pin,
+            motor1_enable_pin=motor1_enable_pin,
+            motor1_speed=motor1_speed,
+            motor2_forward_pin=motor2_forward_pin,
+            motor2_backward_pin=motor2_backward_pin,
+            motor2_enable_pin=motor2_enable_pin,
+            motor2_speed=motor2_speed,
+            ir_sensor_pin=ir_sensor_pin,
+            use_hardware=self.use_hardware
+        )
+        self.dispensers[denomination] = dispenser
+        print(f"[PiBillHandler] Registered dispenser for denomination: {denomination}")
 
     # -------------------------
     # Hardware primitives
@@ -162,6 +320,7 @@ class PiBillHandler:
         print("[PiBillHandler] sorter serial not available (mock mode)")
 
     def sort_via_arduino(self, denom: int, timeout_s: float = 60.0) -> bool:
+        """Send SORT command to Arduino (used only for bill acceptance, not dispensing)."""
         cmd = f"SORT:{denom}\n"
         if self.sorter_serial is None:
             print("[PiBillHandler] sorter serial missing; assuming success (mock).")
@@ -261,7 +420,7 @@ class PiBillHandler:
         push_after_sort_ms: int = 1500,
         wait_for_ir_timeout_s: int = 60,
     ) -> Tuple[bool, Optional[int], str]:
-        """Full accept flow (blocking)."""
+        """Full accept flow (blocking). Uses Arduino SORT for bill acceptance."""
         start = time.time()
         while time.time() - start < wait_for_ir_timeout_s:
             if self.read_ir():
@@ -308,105 +467,56 @@ class PiBillHandler:
         self.motor_stop()
         return True, denom, "accepted"
 
-    def dispense_bill(self, denom: int, qty: int = 1, dispense_time_ms: int = 1500, serial_timeout_s: float = 10.0) -> Tuple[bool, str]:
+    # -------------------------
+    # Bill Dispensing (Modular)
+    # -------------------------
+    def dispense_bill(
+        self, 
+        denom: int, 
+        qty: int = 1, 
+        dispense_duration_s: float = 0.2,
+        max_retry_attempts: int = 5,
+        ir_check_delay_s: float = 0.5
+    ) -> Tuple[bool, str]:
         """
-        Step-by-step handshake dispensing:
-        1) Send PREP_DISPENSE:{denom}:{qty} to Arduino
-        2) Wait for 'READY'
-        3) For each bill: run DC motor for dispense_time_ms, send MOTOR_DONE:{i}, wait for 'ACK'
-        4) After all, wait for 'DONE' from Arduino
-        Returns (True,"dispensed") or (False,"reason")
+        Dispense bills using the registered dispenser for the specified denomination.
+        No Arduino sorting needed - each denomination has its own dedicated dispenser.
+        
+        Args:
+            denom: Bill denomination to dispense
+            qty: Number of bills to dispense
+            dispense_duration_s: Motor run time per attempt
+            max_retry_attempts: Max retries if bill not detected
+            ir_check_delay_s: Delay before checking IR sensor
+        
+        Returns:
+            (success: bool, message: str)
         """
-        try:
-            # If no Arduino connected, just run motor cycles (mock/fallback)
-            if self.sorter_serial is None:
-                for i in range(qty):
-                    self.motor_forward()
-                    time.sleep(dispense_time_ms / 1000.0)
-                    self.motor_stop()
-                    time.sleep(0.3)
-                return True, "dispensed_no_arduino"
-
-            # 1) ask Arduino to prepare (H-bot down, move to denom, servo A push-in, servo B angle)
-            prep_cmd = f"PREP_DISPENSE:{denom}:{qty}\n"
-            try:
-                self.sorter_serial.write(prep_cmd.encode("utf-8"))
-            except Exception as e:
-                return False, f"serial_write_failed:{e}"
-
-            # helper: read lines until timeout
-            deadline = time.time() + serial_timeout_s
-            ready = False
-            while time.time() < deadline:
-                raw = self.sorter_serial.readline()
-                if not raw:
-                    continue
-                line = raw.decode("utf-8", errors="ignore").strip() if isinstance(raw, bytes) else str(raw).strip()
-                if not line:
-                    continue
-                # Arduino should reply 'READY' when it's positioned
-                if "READY" in line:
-                    ready = True
-                    break
-                if "ERR" in line or "ERROR" in line:
-                    return False, f"arduino_prep_error:{line}"
-            if not ready:
-                return False, "no_ready_from_arduino"
-
-            # 2) For each bill: run DC motor then notify Arduino
-            for i in range(qty):
-                # run DC motor (time-based)
-                self.motor_forward()
-                time.sleep(dispense_time_ms / 1000.0)
-                self.motor_stop()
-
-                # notify Arduino that motor cycle finished
-                done_cmd = f"MOTOR_DONE:{denom}:{i+1}\n"
-                try:
-                    self.sorter_serial.write(done_cmd.encode("utf-8"))
-                except Exception as e:
-                    return False, f"serial_write_failed_after_motor:{e}"
-
-                # wait for ACK before next cycle
-                ack_deadline = time.time() + serial_timeout_s
-                ack_ok = False
-                while time.time() < ack_deadline:
-                    raw = self.sorter_serial.readline()
-                    if not raw:
-                        continue
-                    line = raw.decode("utf-8", errors="ignore").strip() if isinstance(raw, bytes) else str(raw).strip()
-                    if not line:
-                        continue
-                    if "ACK" in line or "OK" == line or line.endswith("OK"):
-                        ack_ok = True
-                        break
-                    if "ERR" in line or "ERROR" in line:
-                        return False, f"arduino_error_during_cycle:{line}"
-                if not ack_ok:
-                    return False, "no_ack_from_arduino"
-
-            # 3) Wait for Arduino to finish retracting / moving away after all cycles
-            finish_deadline = time.time() + serial_timeout_s
-            finished = False
-            while time.time() < finish_deadline:
-                raw = self.sorter_serial.readline()
-                if not raw:
-                    continue
-                line = raw.decode("utf-8", errors="ignore").strip() if isinstance(raw, bytes) else str(raw).strip()
-                if not line:
-                    continue
-                if "DONE" in line or "FINISHED" in line:
-                    finished = True
-                    break
-                if "ERR" in line or "ERROR" in line:
-                    return False, f"arduino_finish_error:{line}"
-            if not finished:
-                return False, "no_done_from_arduino"
-
-            return True, "dispensed"
-        except Exception as e:
-            return False, f"exception:{e}"
-
+        # Check if dispenser is registered
+        if denom not in self.dispensers:
+            return False, f"no_dispenser_registered_for_{denom}"
+        
+        dispenser = self.dispensers[denom]
+        print(f"[PiBillHandler] Dispensing {qty} bill(s) of denomination {denom}")
+        
+        # Dispense each bill
+        for bill_num in range(1, qty + 1):
+            print(f"\n[PiBillHandler] Dispensing bill {bill_num}/{qty}")
+            
+            success = dispenser.dispense_single(
+                dispense_duration_s=dispense_duration_s,
+                max_retry_attempts=max_retry_attempts,
+                ir_check_delay_s=ir_check_delay_s
+            )
+            
+            if success:
+                # Deduct from storage
+                self.storage.remove(denom, 1)
+            else:
+                return False, f"bill_{bill_num}_not_detected_after_{max_retry_attempts}_attempts"
+        
+        print(f"[PiBillHandler] Successfully dispensed {qty} bill(s) of denomination {denom}")
+        return True, "dispensed"
 
     def cleanup(self):
         try:
@@ -417,8 +527,14 @@ class PiBillHandler:
 
         try:
             self.motor.close()
+            self.enable_pin.close()
+            self.ir_sensor.close()
+            self.white_led.close()
+            
+            # Cleanup all registered dispensers
+            for denom, dispenser in self.dispensers.items():
+                dispenser.cleanup()
+            
             print("[PiBillHandler] gpiozero pins released")
         except Exception as e:
             print("[PiBillHandler] gpiozero cleanup failed:", e)
-
-        

@@ -24,6 +24,33 @@ class MainWindow(QMainWindow):
         self.bill_handler = PiBillHandler()
         self.coin_handler = CoinHandlerSerial()
 
+        # --- Register Bill Dispensers for each denomination ---
+        # Each dispenser has 2 motors and 1 IR sensor
+        # TODO: Update pin numbers to match your actual hardware configuration
+        
+        # 20 Peso dispenser
+        self.bill_handler.register_dispenser(
+            denomination=20,
+            motor1_forward_pin=20, motor1_backward_pin=21, motor1_enable_pin=16, motor1_speed=0.5,
+            motor2_forward_pin=19, motor2_backward_pin=26, motor2_enable_pin=13, motor2_speed=0.6,
+            ir_sensor_pin=12
+        )
+        
+        # 50 Peso dispenser
+        self.bill_handler.register_dispenser(
+            denomination=50,
+            motor1_forward_pin=5, motor1_backward_pin=6, motor1_enable_pin=25, motor1_speed=0.5,
+            motor2_forward_pin=22, motor2_backward_pin=27, motor2_enable_pin=4, motor2_speed=0.6,
+            ir_sensor_pin=17
+        )
+        
+        # 100 Peso dispenser
+        self.bill_handler.register_dispenser(
+            denomination=100,
+            motor1_forward_pin=14, motor1_backward_pin=15, motor1_enable_pin=18, motor1_speed=0.5,
+            motor2_forward_pin=23, motor2_backward_pin=24, motor2_enable_pin=8, motor2_speed=0.6,
+            ir_sensor_pin=7
+        )
 
         self.current_index = 0
         self.update_button_styles(self.current_index)
