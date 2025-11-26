@@ -6,7 +6,7 @@ import sys
 MOTOR1_FORWARD_PIN = 20
 MOTOR1_BACKWARD_PIN = 21
 MOTOR1_ENABLE_PIN = 16  # PWM capable pin for speed control
-MOTOR1_SPEED = 0.5      # Speed for motor 1 (0.0 to 1.0)
+MOTOR1_SPEED = 0.6      # Speed for motor 1 (0.0 to 1.0)
 
 # GPIO pins for Motor 2 (adjust as needed)
 MOTOR2_FORWARD_PIN = 19
