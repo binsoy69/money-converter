@@ -21,7 +21,7 @@ IR_SENSOR_PIN = 12      # IR sensor at dispenser output
 DISPENSE_DURATION_SECONDS = 0.25  # Duration per dispense attempt
 MAX_RETRY_ATTEMPTS = 5           # Maximum retry attempts if bill not detected
 IR_CHECK_DELAY = 0.5             # Delay before checking IR sensor after motor stops
-IR_POLL_TIMEOUT = 2.0            # Max time to wait for IR detection per bill
+IR_POLL_TIMEOUT = 1.0            # Max time to wait for IR detection per bill
 
 # --- GPIOZero setup ---
 try:
