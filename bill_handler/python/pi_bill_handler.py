@@ -97,58 +97,106 @@ class BillDispenser:
             self.ir_sensor = DigitalInputDevice(0)
     
     def check_ir(self) -> bool:
-        """Check if bill is detected by IR sensor (active-low)."""
+        """
+        Check if bill is detected by IR sensor.
+        Returns True if bill detected, False otherwise.
+        IR sensor is active-low: LOW (False) = bill detected
+        """
         return not self.ir_sensor.value
-    
-    def run_motors(self, duration_s: float):
-        """Run both motors forward for specified duration."""
-        # Set speeds
-        self.motor1_enable.value = self.motor1_speed
+
+    def start_transport(self):
+        """Start Motor 2 (Transport) continuously."""
         self.motor2_enable.value = self.motor2_speed
-        
-        # Run motors forward
-        self.motor1.forward()
         self.motor2.forward()
-        print(f"[Dispenser-{self.denomination}] Motors running at M1:{self.motor1_speed*100:.0f}%, M2:{self.motor2_speed*100:.0f}%")
-        
-        time.sleep(duration_s)
-        
-        # Stop motors
-        self.motor1.stop()
+        print(f"[Dispenser-{self.denomination}] Transport (M2) started at {self.motor2_speed*100:.0f}%")
+
+    def stop_transport(self):
+        """Stop Motor 2 (Transport)."""
         self.motor2.stop()
-        self.motor1_enable.off()
         self.motor2_enable.off()
-        print(f"[Dispenser-{self.denomination}] Motors stopped")
-    
-    def dispense_single(
-        self,
-        dispense_duration_s: float = 0.2,
-        max_retry_attempts: int = 5,
-        ir_check_delay_s: float = 0.5
-    ) -> bool:
+        print(f"[Dispenser-{self.denomination}] Transport (M2) stopped")
+
+    def pulse_feeder(self, duration_s: float):
+        """Run Motor 1 (Feeder) forward for specified duration."""
+        self.motor1_enable.value = self.motor1_speed
+        self.motor1.forward()
+        print(f"[Dispenser-{self.denomination}] Feeder (M1) pulsing for {duration_s}s at {self.motor1_speed*100:.0f}%...")
+        time.sleep(duration_s)
+        self.motor1.stop()
+        self.motor1_enable.off()
+        print(f"[Dispenser-{self.denomination}] Feeder (M1) stopped")
+
+    def wait_for_bill(self, timeout_s: float = 1.0) -> bool:
         """
-        Attempt to dispense a single bill with IR verification and retry logic.
-        Returns True if successful, False otherwise.
+        Wait for IR sensor to detect a bill within timeout.
+        Returns True if detected, False if timeout.
         """
-        for attempt in range(1, max_retry_attempts + 1):
-            print(f"[Dispenser-{self.denomination}] Attempt {attempt}/{max_retry_attempts}")
-            
-            # Run motors
-            self.run_motors(dispense_duration_s)
-            
-            # Wait for bill to settle
-            time.sleep(ir_check_delay_s)
-            
-            # Check IR sensor
+        start_time = time.time()
+        # print(f"[Dispenser-{self.denomination}] Waiting for bill detection (timeout {timeout_s}s)...")
+        while time.time() - start_time < timeout_s:
             if self.check_ir():
-                print(f"[Dispenser-{self.denomination}] Bill detected by IR sensor")
                 return True
-            else:
-                print(f"[Dispenser-{self.denomination}] No bill detected")
-                if attempt < max_retry_attempts:
-                    print(f"[Dispenser-{self.denomination}] Retrying... ({max_retry_attempts - attempt} attempts remaining)")
-        
+            time.sleep(0.05)  # Small delay to prevent CPU hogging
         return False
+
+    def dispense(
+        self,
+        qty: int,
+        dispense_duration_s: float = 0.25,
+        max_retry_attempts: int = 5,
+        ir_poll_timeout_s: float = 1.0
+    ) -> Tuple[bool, str]:
+        """
+        Dispense a specified number of bills using the logic from test_bill_dispenser_ir.py.
+        Motor 2 (Transport) runs continuously. Motor 1 (Feeder) pulses to feed bills.
+        """
+        print(f"\n[Dispenser-{self.denomination}] Starting dispense of {qty} bill(s)")
+        
+        successful_dispenses = 0
+        
+        try:
+            # Start Motor 2 (Transport)
+            self.start_transport()
+            
+            # Give Motor 2 a moment to spin up
+            time.sleep(0.5)
+
+            for i in range(1, qty + 1):
+                print(f"\n[Dispenser-{self.denomination}] --- Dispensing Bill {i}/{qty} ---")
+                bill_dispensed = False
+                
+                for attempt in range(1, max_retry_attempts + 1):
+                    if attempt > 1:
+                        print(f"[Dispenser-{self.denomination}] Retry attempt {attempt}/{max_retry_attempts}...")
+                    
+                    # Pulse Motor 1 (Feeder)
+                    self.pulse_feeder(dispense_duration_s)
+                    
+                    # Wait for IR detection
+                    if self.wait_for_bill(timeout_s=ir_poll_timeout_s):
+                        print(f"[Dispenser-{self.denomination}] SUCCESS: Bill {i} detected!")
+                        bill_dispensed = True
+                        successful_dispenses += 1
+                        # Small delay between bills to ensure separation
+                        time.sleep(0.5) 
+                        break
+                    else:
+                        print(f"[Dispenser-{self.denomination}] No bill detected.")
+                
+                if not bill_dispensed:
+                    error_msg = f"bill_{i}_not_detected_after_{max_retry_attempts}_attempts"
+                    print(f"[Dispenser-{self.denomination}] FAILED: {error_msg}")
+                    return False, error_msg
+        
+        except Exception as e:
+            print(f"[Dispenser-{self.denomination}] Exception during dispense: {e}")
+            return False, str(e)
+        finally:
+            # Always stop Motor 2 at the end
+            self.stop_transport()
+
+        print(f"[Dispenser-{self.denomination}] Dispense complete. Success: {successful_dispenses}/{qty}")
+        return True, "dispensed"
     
     def cleanup(self):
         """Release GPIO resources."""
@@ -474,9 +522,9 @@ class PiBillHandler:
         self, 
         denom: int, 
         qty: int = 1, 
-        dispense_duration_s: float = 0.2,
+        dispense_duration_s: float = 0.25,
         max_retry_attempts: int = 5,
-        ir_check_delay_s: float = 0.5
+        ir_poll_timeout_s: float = 1.0
     ) -> Tuple[bool, str]:
         """
         Dispense bills using the registered dispenser for the specified denomination.
@@ -485,9 +533,9 @@ class PiBillHandler:
         Args:
             denom: Bill denomination to dispense
             qty: Number of bills to dispense
-            dispense_duration_s: Motor run time per attempt
+            dispense_duration_s: Motor 1 (Feeder) pulse duration
             max_retry_attempts: Max retries if bill not detected
-            ir_check_delay_s: Delay before checking IR sensor
+            ir_poll_timeout_s: Max time to wait for IR detection per bill
         
         Returns:
             (success: bool, message: str)
@@ -497,26 +545,21 @@ class PiBillHandler:
             return False, f"no_dispenser_registered_for_{denom}"
         
         dispenser = self.dispensers[denom]
-        print(f"[PiBillHandler] Dispensing {qty} bill(s) of denomination {denom}")
         
-        # Dispense each bill
-        for bill_num in range(1, qty + 1):
-            print(f"\n[PiBillHandler] Dispensing bill {bill_num}/{qty}")
-            
-            success = dispenser.dispense_single(
-                dispense_duration_s=dispense_duration_s,
-                max_retry_attempts=max_retry_attempts,
-                ir_check_delay_s=ir_check_delay_s
-            )
-            
-            if success:
-                # Deduct from storage
-                self.storage.remove(denom, 1)
-            else:
-                return False, f"bill_{bill_num}_not_detected_after_{max_retry_attempts}_attempts"
+        # Delegate to the dispenser's batch logic
+        success, message = dispenser.dispense(
+            qty=qty,
+            dispense_duration_s=dispense_duration_s,
+            max_retry_attempts=max_retry_attempts,
+            ir_poll_timeout_s=ir_poll_timeout_s
+        )
         
-        print(f"[PiBillHandler] Successfully dispensed {qty} bill(s) of denomination {denom}")
-        return True, "dispensed"
+        if success:
+            # Deduct from storage
+            self.storage.remove(denom, qty)
+            return True, "dispensed"
+        else:
+            return False, message
 
     def cleanup(self):
         try:
