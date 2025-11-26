@@ -3,8 +3,8 @@ import sys
 
 # --- Configuration ---
 # GPIO pins for Motor 1 (adjust as needed)
-MOTOR1_FORWARD_PIN = 21
-MOTOR1_BACKWARD_PIN = 20
+MOTOR1_FORWARD_PIN = 20
+MOTOR1_BACKWARD_PIN = 21
 MOTOR1_ENABLE_PIN = 16  # PWM capable pin for speed control
 MOTOR1_SPEED = 0.5      # Speed for motor 1 (0.0 to 1.0)
 
