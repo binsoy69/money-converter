@@ -12,7 +12,7 @@ MOTOR1_SPEED = 0.6      # Speed for motor 1 (0.0 to 1.0)
 MOTOR2_FORWARD_PIN = 19
 MOTOR2_BACKWARD_PIN = 26
 MOTOR2_ENABLE_PIN = 13  # PWM capable pin for speed control
-MOTOR2_SPEED = 0.6      # Speed for motor 2 (0.0 to 1.0)
+MOTOR2_SPEED = 0.8      # Speed for motor 2 (0.0 to 1.0)
 
 # IR Sensor pin (for detecting dispensed bill)
 IR_SENSOR_PIN = 12      # IR sensor at dispenser output
