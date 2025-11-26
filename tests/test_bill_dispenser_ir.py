@@ -21,6 +21,7 @@ IR_SENSOR_PIN = 12      # IR sensor at dispenser output
 DISPENSE_DURATION_SECONDS = 0.2  # Duration per dispense attempt
 MAX_RETRY_ATTEMPTS = 5           # Maximum retry attempts if bill not detected
 IR_CHECK_DELAY = 0.5             # Delay before checking IR sensor after motor stops
+IR_POLL_TIMEOUT = 2.0            # Max time to wait for IR detection per bill
 
 # --- GPIOZero setup ---
 try:
@@ -109,64 +110,96 @@ class BillDispenserIRTester:
         """
         return not self.ir_sensor.value
 
-    def run_motors(self, duration):
-        """Run both motors forward for specified duration."""
-        # Set speeds
-        self.motor1_enable.value = MOTOR1_SPEED
+    def start_motor2(self):
+        """Start Motor 2 continuously."""
         self.motor2_enable.value = MOTOR2_SPEED
-
-        # Run motors forward
-        self.motor1.forward()
         self.motor2.forward()
-        print(f"  Motors running at Motor1:{MOTOR1_SPEED*100:.0f}%, Motor2:{MOTOR2_SPEED*100:.0f}%")
+        print(f"  Motor 2 started at {MOTOR2_SPEED*100:.0f}%")
 
-        time.sleep(duration)
-
-        # Stop motors
-        self.motor1.stop()
+    def stop_motor2(self):
+        """Stop Motor 2."""
         self.motor2.stop()
-        self.motor1_enable.off()
         self.motor2_enable.off()
-        print("  Motors stopped.")
+        print("  Motor 2 stopped.")
 
-    def dispense_with_verification(self):
+    def pulse_motor1(self, duration):
+        """Run Motor 1 forward for specified duration."""
+        self.motor1_enable.value = MOTOR1_SPEED
+        self.motor1.forward()
+        print(f"    Motor 1 pulsing for {duration}s at {MOTOR1_SPEED*100:.0f}%...")
+        time.sleep(duration)
+        self.motor1.stop()
+        self.motor1_enable.off()
+        print("    Motor 1 stopped.")
+
+    def wait_for_bill(self, timeout=IR_POLL_TIMEOUT):
         """
-        Attempt to dispense a bill with IR sensor verification.
-        Retries up to MAX_RETRY_ATTEMPTS if bill not detected.
-        Returns True if successful, False otherwise.
+        Wait for IR sensor to detect a bill within timeout.
+        Returns True if detected, False if timeout.
+        """
+        start_time = time.time()
+        print(f"    Waiting for bill detection (timeout {timeout}s)...")
+        while time.time() - start_time < timeout:
+            if self.check_ir_sensor():
+                return True
+            time.sleep(0.05)  # Small delay to prevent CPU hogging
+        return False
+
+    def dispense_bills(self, count):
+        """
+        Dispense a specified number of bills.
+        Motor 2 runs continuously. Motor 1 pulses to feed bills.
         """
         print(f"\n{'='*60}")
-        print("DISPENSING BILL WITH IR VERIFICATION")
+        print(f"DISPENSING {count} BILL(S)")
         print(f"{'='*60}")
 
-        for attempt in range(1, MAX_RETRY_ATTEMPTS + 1):
-            print(f"\n--- Attempt {attempt}/{MAX_RETRY_ATTEMPTS} ---")
+        successful_dispenses = 0
+        
+        try:
+            # Start Motor 2 (Transport)
+            self.start_motor2()
             
-            # Run motors for one dispense cycle
-            print(f"Running motors for {DISPENSE_DURATION_SECONDS} seconds...")
-            self.run_motors(DISPENSE_DURATION_SECONDS)
+            # Give Motor 2 a moment to spin up
+            time.sleep(0.5)
 
-            # Wait a moment for bill to settle
-            print(f"Waiting {IR_CHECK_DELAY}s before checking IR sensor...")
-            time.sleep(IR_CHECK_DELAY)
-
-            # Check IR sensor
-            print("Checking IR sensor...")
-            if self.check_ir_sensor():
-                print("SUCCESS: Bill detected by IR sensor!")
-                print(f"{'='*60}\n")
-                return True
-            else:
-                print("FAILED: No bill detected by IR sensor.")
-                if attempt < MAX_RETRY_ATTEMPTS:
-                    print(f"  Retrying... ({MAX_RETRY_ATTEMPTS - attempt} attempts remaining)")
-                else:
-                    print("  Maximum retry attempts reached.")
+            for i in range(1, count + 1):
+                print(f"\n--- Dispensing Bill {i}/{count} ---")
+                bill_dispensed = False
+                
+                for attempt in range(1, MAX_RETRY_ATTEMPTS + 1):
+                    if attempt > 1:
+                        print(f"    Retry attempt {attempt}/{MAX_RETRY_ATTEMPTS}...")
+                    
+                    # Pulse Motor 1 (Feeder)
+                    self.pulse_motor1(DISPENSE_DURATION_SECONDS)
+                    
+                    # Wait for IR detection
+                    if self.wait_for_bill(timeout=IR_POLL_TIMEOUT):
+                        print(f"    SUCCESS: Bill {i} detected!")
+                        bill_dispensed = True
+                        successful_dispenses += 1
+                        # Small delay between bills to ensure separation
+                        time.sleep(0.5) 
+                        break
+                    else:
+                        print("    No bill detected.")
+                
+                if not bill_dispensed:
+                    print(f"    FAILED: Could not dispense bill {i} after {MAX_RETRY_ATTEMPTS} attempts.")
+                    # Optional: Stop if one fails? Or continue? 
+                    # For now, we'll continue trying the next one but note the failure.
+        
+        except KeyboardInterrupt:
+            print("\nDispense interrupted by user!")
+        finally:
+            # Always stop Motor 2 at the end
+            self.stop_motor2()
 
         print(f"\n{'='*60}")
-        print("DISPENSE FAILED: Bill not detected after all attempts")
+        print(f"DISPENSE COMPLETE. Success: {successful_dispenses}/{count}")
         print(f"{'='*60}\n")
-        return False
+        return successful_dispenses == count
 
     def cleanup(self):
         """Clean up GPIO resources."""
@@ -189,26 +222,30 @@ def main():
         tester = BillDispenserIRTester()
         
         print("\n" + "="*60)
-        print("BILL DISPENSER WITH IR SENSOR TEST")
+        print("BILL DISPENSER WITH IR SENSOR TEST (MULTI-BILL)")
         print("="*60)
         print("Commands:")
-        print("  - Press 'd' + ENTER to dispense a bill")
-        print("  - Press ENTER alone to dispense a bill")
+        print("  - Enter a number to dispense that many bills")
+        print("  - Press ENTER alone to dispense 1 bill")
         print("  - Press CTRL+C to exit")
         print("="*60 + "\n")
 
         while True:
-            user_input = input("Ready to dispense (press 'd' or ENTER): ").strip().lower()
+            user_input = input("Enter number of bills to dispense (default 1): ").strip().lower()
             
-            # Accept 'd', empty string (just Enter), or any input
-            if user_input == 'd' or user_input == '':
-                success = tester.dispense_with_verification()
-                if success:
-                    print("Status: Dispense successful\n")
-                else:
-                    print("Status: Dispense failed\n")
+            count = 1
+            if user_input == '':
+                count = 1
+            elif user_input.isdigit():
+                count = int(user_input)
+                if count <= 0:
+                    print("Please enter a positive number.")
+                    continue
             else:
-                print("Invalid input. Press 'd' + ENTER or just ENTER to dispense.\n")
+                print("Invalid input. Please enter a number.")
+                continue
+
+            tester.dispense_bills(count)
 
     except KeyboardInterrupt:
         print("\n\nExiting program...")
