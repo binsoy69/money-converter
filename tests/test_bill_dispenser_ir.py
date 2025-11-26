@@ -6,7 +6,7 @@ import sys
 MOTOR1_FORWARD_PIN = 20
 MOTOR1_BACKWARD_PIN = 21
 MOTOR1_ENABLE_PIN = 16  # PWM capable pin for speed control
-MOTOR1_SPEED = 0.5      # Speed for motor 1 (0.0 to 1.0)
+MOTOR1_SPEED = 0.7      # Speed for motor 1 (0.0 to 1.0)
 
 # GPIO pins for Motor 2 (adjust as needed)
 MOTOR2_FORWARD_PIN = 19
@@ -18,7 +18,7 @@ MOTOR2_SPEED = 0.6      # Speed for motor 2 (0.0 to 1.0)
 IR_SENSOR_PIN = 12      # IR sensor at dispenser output
 
 # Dispense settings
-DISPENSE_DURATION_SECONDS = 0.2  # Duration per dispense attempt
+DISPENSE_DURATION_SECONDS = 0.4  # Duration per dispense attempt
 MAX_RETRY_ATTEMPTS = 5           # Maximum retry attempts if bill not detected
 IR_CHECK_DELAY = 0.5             # Delay before checking IR sensor after motor stops
 IR_POLL_TIMEOUT = 2.0            # Max time to wait for IR detection per bill
