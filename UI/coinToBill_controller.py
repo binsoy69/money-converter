@@ -338,7 +338,6 @@ class CoinBillConverter(QStackedWidget):
                 self.bill_dispense_worker = BillDispenserWorker(
                     breakdown=self.bill_breakdown,
                     handler=self.bill_handler,
-                    dispense_time_ms=1500
                 )
                 self.bill_dispense_worker.dispenseAck.connect(self.on_dispense_ack)
                 self.bill_dispense_worker.dispenseDone.connect(self.on_dispense_done)

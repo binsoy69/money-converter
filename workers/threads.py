@@ -43,11 +43,10 @@ class BillDispenserWorker(QThread):
     dispenseError = pyqtSignal(str)
     finished = pyqtSignal()
 
-    def __init__(self, breakdown: dict, handler, dispense_time_ms: int = 1500):
+    def __init__(self, breakdown: dict, handler):
         super().__init__()
         self.breakdown = breakdown.copy()
         self.handler = handler 
-        self.dispense_time_ms = dispense_time_ms
         self._running = True
 
     def run(self):
@@ -63,7 +62,7 @@ class BillDispenserWorker(QThread):
                 if qty <= 0:
                     continue
                 self.dispenseAck.emit(denom, qty)
-                ok_disp, msg = self.handler.dispense_bill(denom, qty, self.dispense_time_ms)
+                ok_disp, msg = self.handler.dispense_bill(denom, qty)
                 if not ok_disp:
                     # rollback previous denoms
                     for d2, q2 in self.breakdown.items():

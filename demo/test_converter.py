@@ -18,7 +18,7 @@ def run_tests():
     print("Coins:", coins)
 
     print("\n=== Test 2: Coins → Bills (amount=135, AUTO mode) ===")
-    bills, coins = convert_coins_to_bills(135, [], bill_storage, coin_storage)
+    bills, coins = convert_coins_to_bills(23, [20], bill_storage, coin_storage)
     print("Bills:", bills)
     print("Coins:", coins)
 

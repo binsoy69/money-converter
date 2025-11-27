@@ -119,7 +119,7 @@ Servo sorter;
 const int SORTER_SERVO_PIN = 4;
 const int CENTER = 81;
 const int LEFT   = 45;
-const int RIGHT  = 117;
+const int RIGHT  = 120;
 
 // Dispenser Setup
 Servo dispenser1, dispenser5, dispenser10, dispenser20;
@@ -279,9 +279,9 @@ void setup() {
 
   setup_coin();
   setup_sorter();
-  setup_dispenser();
+  //setup_dispenser();
 
-  goHome();
+  //goHome();
   Serial.println("READY");
 }
 
