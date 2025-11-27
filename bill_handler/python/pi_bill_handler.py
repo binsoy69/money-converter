@@ -19,8 +19,17 @@ from typing import Optional, Tuple, Dict
 # --- GPIOZero setup ---
 try:
     from gpiozero import Motor, PWMOutputDevice, DigitalInputDevice, LED, Device
+    # Attempt to initialize the default pin factory to check for errors early
+    # This often catches "BadPinFactory" or permission issues before we try to use pins
+    if Device.pin_factory is None:
+        # Force a check (accessing internal lazy prop or just trying to create a dummy device might be too invasive)
+        # Instead, we rely on the import. But let's try to print what we found.
+        pass
+    print(f"[PiBillHandler] gpiozero available. Factory: {Device.pin_factory}")
     ON_RPI = True
-except Exception:
+except Exception as e:
+    print(f"[PiBillHandler] gpiozero import failed or factory init failed: {e}")
+    print("[PiBillHandler] Falling back to MOCK mode.")
     ON_RPI = False
     # mocks for dev/off-Pi testing
     class Motor:
