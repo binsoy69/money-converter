@@ -18,6 +18,13 @@ from typing import Optional, Tuple, Dict
 
 # --- GPIOZero setup ---
 try:
+    # Force NativeFactory to avoid SIGABRT conflicts with PyQt/OpenCV
+    # The default factory (lgpio/RPi.GPIO) often conflicts with Qt's signal handling or CV2's memory mapping
+    import os
+    if 'GPIOZERO_PIN_FACTORY' not in os.environ:
+        print("[PiBillHandler] Forcing GPIOZERO_PIN_FACTORY='native' to prevent conflicts...")
+        os.environ['GPIOZERO_PIN_FACTORY'] = 'native'
+
     from gpiozero import Motor, PWMOutputDevice, DigitalInputDevice, LED, Device
     # Attempt to initialize the default pin factory to check for errors early
     # This often catches "BadPinFactory" or permission issues before we try to use pins

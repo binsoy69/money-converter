@@ -270,7 +270,7 @@ class CoinHandlerSerial:
                 except Exception as e:
                     print("[CoinHandlerSerial] callback error:", e)
 
-            if self.total_value >= self.required_amount and not self._reached_emitted:
+            if self.total_value >= required_amount and not self._reached_emitted:
                 self._reached_emitted = True
                 print("[CoinHandlerSerial] required fee reached; sending DISABLE_COIN")
 
