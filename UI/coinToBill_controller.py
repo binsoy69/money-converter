@@ -102,7 +102,7 @@ class CoinBillConverter(QStackedWidget):
         
         self.connect_buttons([
             self.cb_summary_proceed
-        ], self.convert_coin_to_bill)
+        ], self.go_to_cb_dispense)
         
         self.connect_buttons([
             self.cb_insertCoins_proceed_2
