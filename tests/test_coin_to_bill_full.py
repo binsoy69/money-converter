@@ -52,7 +52,7 @@ class CoinToBillTest:
         self.required_amount = 0
         self.selected_amount = 0
         
-        print("\n[✓] Initialization complete!\n")
+        print("\nInitialization complete!\n")
     
     def get_bill_amount(self):
         """Prompt user for bill amount to dispense."""
@@ -60,11 +60,11 @@ class CoinToBillTest:
         print("Available bill amounts:")
         for amt in valid_amounts:
             fee = AMOUNT_FEE_MAPPING[amt]
-            print(f"  ₱{amt} (Fee: ₱{fee}, Total: ₱{amt + fee})")
+            print(f"  {amt} (Fee: {fee}, Total: {amt + fee})")
         
         while True:
             try:
-                choice = input("\nEnter bill amount to dispense: ₱").strip()
+                choice = input("\nEnter bill amount to dispense: ").strip()
                 amount = int(choice)
                 if amount in AMOUNT_FEE_MAPPING:
                     return amount
@@ -76,15 +76,15 @@ class CoinToBillTest:
     def on_coin_inserted(self, denom, count, total):
         """Callback when a coin is inserted."""
         self.total_inserted = total
-        print(f"\n[COIN] ₱{denom} inserted (Total: ₱{total} / ₱{self.required_amount})")
+        print(f"\nCoin inserted (Total: {total} / {self.required_amount})")
         
         if total >= self.required_amount:
-            print(f"[✓] Required amount reached! (₱{total})")
+            print(f"Required amount reached! ({total})")
             self.coin_insertion_done.set()
     
     def on_coins_finalized(self, total):
         """Callback when coin insertion is complete."""
-        print(f"[INFO] Coin insertion finalized. Total: ₱{total}")
+        print(f"Coin insertion finalized. Total: {total}")
         self.coin_insertion_done.set()
     
     def run(self):
@@ -96,13 +96,13 @@ class CoinToBillTest:
             self.required_amount = self.selected_amount + fee
             
             print("\n" + "=" * 60)
-            print(f"Bill Amount: ₱{self.selected_amount}")
-            print(f"Service Fee: ₱{fee}")
-            print(f"Total Required: ₱{self.required_amount}")
+            print(f"Bill Amount: {self.selected_amount}")
+            print(f"Service Fee: {fee}")
+            print(f"Total Required: {self.required_amount}")
             print("=" * 60)
             
             # Step 2: Accept coins
-            print(f"\n[COIN INSERTION] Please insert ₱{self.required_amount} in coins...")
+            print(f"\nPlease insert {self.required_amount} in coins...")
             print("Insert coins now. The system will detect them automatically.\n")
             
             # Register callbacks
@@ -127,10 +127,10 @@ class CoinToBillTest:
             amount_to_dispense = self.selected_amount + excess
             
             print("\n" + "=" * 60)
-            print(f"Coins Inserted: ₱{self.total_inserted}")
-            print(f"Required: ₱{self.required_amount}")
-            print(f"Excess: ₱{excess}")
-            print(f"Amount to Dispense: ₱{amount_to_dispense}")
+            print(f"Coins Inserted: {self.total_inserted}")
+            print(f"Required: {self.required_amount}")
+            print(f"Excess: {excess}")
+            print(f"Amount to Dispense: {amount_to_dispense}")
             print("=" * 60)
             
             # Step 4: Convert to bills/coins
@@ -158,28 +158,28 @@ class CoinToBillTest:
             
             # Step 5: Dispense bills
             if bill_breakdown:
-                print("\n[DISPENSING] Dispensing bills...")
+                print("\nDispensing bills...")
                 for denom, qty in bill_breakdown.items():
-                    print(f"  Dispensing ₱{denom} x{qty}...")
+                    print(f"  Dispensing {denom} x{qty}...")
                     success, msg = self.bill_handler.dispense_bill(denom, qty)
                     if success:
-                        print(f"  [✓] Successfully dispensed ₱{denom} x{qty}")
+                        print(f"  Successfully dispensed {denom} x{qty}")
                     else:
-                        print(f"  [✗] Failed to dispense ₱{denom} x{qty}: {msg}")
+                        print(f"  Failed to dispense {denom} x{qty}: {msg}")
                         return
             
             # Step 6: Dispense coins if needed
             if coin_breakdown:
-                print("\n[DISPENSING] Dispensing coins...")
+                print("\nDispensing coins...")
                 for denom, qty in coin_breakdown.items():
-                    print(f"  Dispensing ₱{denom} x{qty}...")
+                    print(f"  Dispensing {denom} x{qty}...")
                     self.coin_handler.dispense(denom, qty)
                     # Wait a bit for dispense to complete
                     time.sleep(2)
-                    print(f"  [✓] Dispensed ₱{denom} x{qty}")
+                    print(f"  Dispensed ₱{denom} x{qty}")
             
             print("\n" + "=" * 60)
-            print("[✓] TRANSACTION COMPLETE!")
+            print("TRANSACTION COMPLETE!")
             print("=" * 60)
             
         except KeyboardInterrupt:
@@ -196,7 +196,7 @@ class CoinToBillTest:
             except:
                 pass
             self.bill_handler.cleanup()
-            print("[✓] Cleanup complete.")
+            print("Cleanup complete.")
 
 def main():
     test = CoinToBillTest()
