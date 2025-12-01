@@ -25,7 +25,7 @@ try:
         print("[PiBillHandler] Forcing GPIOZERO_PIN_FACTORY='native' to prevent conflicts...")
         os.environ['GPIOZERO_PIN_FACTORY'] = 'native'
 
-    from gpiozero import Motor, PWMOutputDevice, DigitalInputDevice, LED, Device
+    from gpiozero import Motor, PWMOutputDevice, DigitalInputDevice, DigitalOutputDevice, LED, Device
     # Attempt to initialize the default pin factory to check for errors early
     # This often catches "BadPinFactory" or permission issues before we try to use pins
     if Device.pin_factory is None:
@@ -51,6 +51,11 @@ except Exception as e:
         def close(self): pass
     class DigitalInputDevice:
         def __init__(self, pin, pull_up=True): self.value = 1
+        def close(self): pass
+    class DigitalOutputDevice:
+        def __init__(self, pin, active_high=True, initial_value=False): self.value = 0
+        def on(self): self.value = 1
+        def off(self): self.value = 0
         def close(self): pass
     class LED:
         def __init__(self, pin): pass
@@ -100,10 +105,22 @@ class BillDispenser:
         self.motor2_speed = motor2_speed
         
         if use_hardware and ON_RPI:
-            self.motor1 = Motor(forward=motor1_forward_pin, backward=motor1_backward_pin)
-            self.motor1_enable = PWMOutputDevice(motor1_enable_pin)
-            self.motor2 = Motor(forward=motor2_forward_pin, backward=motor2_backward_pin)
-            self.motor2_enable = PWMOutputDevice(motor2_enable_pin)
+            try:
+                # Try PWM first
+                self.motor1 = Motor(forward=motor1_forward_pin, backward=motor1_backward_pin)
+                self.motor1_enable = PWMOutputDevice(motor1_enable_pin)
+                
+                self.motor2 = Motor(forward=motor2_forward_pin, backward=motor2_backward_pin)
+                self.motor2_enable = PWMOutputDevice(motor2_enable_pin)
+            except Exception as e:
+                print(f"[Dispenser-{denomination}] PWM init failed ({e}), falling back to Digital (Non-PWM).")
+                # Fallback to non-PWM
+                self.motor1 = Motor(forward=motor1_forward_pin, backward=motor1_backward_pin, pwm=False)
+                self.motor1_enable = DigitalOutputDevice(motor1_enable_pin)
+                
+                self.motor2 = Motor(forward=motor2_forward_pin, backward=motor2_backward_pin, pwm=False)
+                self.motor2_enable = DigitalOutputDevice(motor2_enable_pin)
+
             self.ir_sensor = DigitalInputDevice(ir_sensor_pin)
         else:
             self.motor1 = Motor(forward=0, backward=0)
@@ -253,8 +270,17 @@ class PiBillHandler:
         self.use_hardware = ON_RPI if use_hardware is None else use_hardware
 
         if self.use_hardware and ON_RPI:
-            self.motor = Motor(forward=self.motor_forward_pin, backward=self.motor_backward_pin)
-            self.enable_pin = PWMOutputDevice(self.motor_enable_pin)
+            try:
+                # Try PWM first
+                self.motor = Motor(forward=self.motor_forward_pin, backward=self.motor_backward_pin)
+                self.enable_pin = PWMOutputDevice(self.motor_enable_pin)
+            except Exception as e:
+                print(f"[PiBillHandler] PWM init failed ({e}), falling back to Digital (Non-PWM).")
+                # Fallback to non-PWM motor control
+                self.motor = Motor(forward=self.motor_forward_pin, backward=self.motor_backward_pin, pwm=False)
+                # Use DigitalOutputDevice for enable pin (ON/OFF only, no speed control)
+                self.enable_pin = DigitalOutputDevice(self.motor_enable_pin)
+            
             self.ir_sensor = DigitalInputDevice(self.ir_pin)  # active-low
             self.white_led = LED(self.white_led_pin)
         else:
