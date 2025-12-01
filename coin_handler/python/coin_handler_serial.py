@@ -90,7 +90,7 @@ class CoinHandlerSerial:
         # start reader
         if not self._reader_thread or not self._reader_thread.is_alive():
             self._reader_running = True
-            self._reader_thread = threading.Thread(target=self._reader_loop(required_amount), daemon=True)
+            self._reader_thread = threading.Thread(target=self._reader_loop, args=(required_amount,), daemon=True)
             self._reader_thread.start()
 
     def stop_accepting(self):
