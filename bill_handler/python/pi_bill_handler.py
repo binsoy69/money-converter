@@ -202,12 +202,13 @@ class BillDispenser:
         
         try:
             # Start Motor 2 (Transport)
-            self.start_transport()
+            #self.start_transport()
             
             # Give Motor 2 a moment to spin up
             time.sleep(0.5)
-
+            print("DEBUG MOTOR 2 started")
             for i in range(1, qty + 1):
+                print("DISPENSE START MOTOR 1")
                 print(f"\n[Dispenser-{self.denomination}] --- Dispensing Bill {i}/{qty} ---")
                 bill_dispensed = False
                 
@@ -216,7 +217,9 @@ class BillDispenser:
                         print(f"[Dispenser-{self.denomination}] Retry attempt {attempt}/{max_retry_attempts}...")
                     
                     # Pulse Motor 1 (Feeder)
+                    print("DISPENSE BEFORE MOTOR 1")
                     self.pulse_feeder(dispense_duration_s)
+                    print("DISPENSE AFTER MOTOR 1")
                     
                     # Wait for IR detection
                     if self.wait_for_bill(timeout_s=ir_poll_timeout_s):
