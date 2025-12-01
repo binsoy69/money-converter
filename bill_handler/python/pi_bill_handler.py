@@ -611,7 +611,7 @@ class PiBillHandler:
         
         if success:
             # Deduct from storage
-            self.storage.remove(denom, qty)
+            self.storage.deduct(denom, qty)
             return True, "dispensed"
         else:
             return False, message
