@@ -279,9 +279,9 @@ void setup() {
 
   setup_coin();
   setup_sorter();
-  //setup_dispenser();
+  setup_dispenser();
 
-  //goHome();
+  goHome();
   Serial.println("READY");
 }
 
