@@ -199,16 +199,14 @@ class BillDispenser:
         print(f"\n[Dispenser-{self.denomination}] Starting dispense of {qty} bill(s)")
         
         successful_dispenses = 0
-        
+        # if UI is used code will stop here, code 134, unhandled exception aborted
         try:
             # Start Motor 2 (Transport)
-            #self.start_transport()
+            self.start_transport()
             
             # Give Motor 2 a moment to spin up
             time.sleep(0.5)
-            print("DEBUG MOTOR 2 started")
             for i in range(1, qty + 1):
-                print("DISPENSE START MOTOR 1")
                 print(f"\n[Dispenser-{self.denomination}] --- Dispensing Bill {i}/{qty} ---")
                 bill_dispensed = False
                 
