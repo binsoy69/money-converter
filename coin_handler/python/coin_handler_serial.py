@@ -153,7 +153,7 @@ class CoinHandlerSerial:
                 time.sleep(self._reconnect_wait)
                 self._reconnect_wait = min(self._reconnect_wait * 1.5, 10.0)
 
-    def _reader_loop(self, required_amount):
+    def _reader_loop(self, required_amount=0):
         """Continuously read lines and parse them."""
         print("[CoinHandlerSerial] reader started")
         while self._reader_running:
@@ -181,7 +181,7 @@ class CoinHandlerSerial:
         print("[CoinHandlerSerial] reader stopped")
 
 
-    def _parse_line(self, line: str, required_amount):
+    def _parse_line(self, line: str, required_amount=0):
         # Possible formats expected from Arduino:
         # COIN:<denom>
         # SORT_DONE:<denom>
@@ -249,7 +249,7 @@ class CoinHandlerSerial:
             print("[CoinHandlerSerial] Unknown msg:", line)
 
 
-    def _handle_coin(self, denom: int, required_amount):
+    def _handle_coin(self, denom: int, required_amount=0):
         with self._lock:
             if denom not in self.session_counts:
                 print("[CoinHandlerSerial] unsupported denom received:", denom)
@@ -269,7 +269,7 @@ class CoinHandlerSerial:
                 except Exception as e:
                     print("[CoinHandlerSerial] callback error:", e)
 
-            if self.total_value >= required_amount and not self._reached_emitted:
+            if required_amount > 0 and self.total_value >= required_amount and not self._reached_emitted:
                 self._reached_emitted = True
                 print("[CoinHandlerSerial] required fee reached; sending DISABLE_COIN")
 
