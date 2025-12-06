@@ -64,11 +64,11 @@ class CoinnectTerminal:
         print("=" * 60)
         
         # Initialize handlers
-        print("\n[1/3] Initializing Bill Handler...")
-        self.bill_handler = PiBillHandler()
-        
-        print("[2/3] Initializing Coin Handler...")
+        print("\n[1/3] Initializing Coin Handler (and Shared Serial)...")
         self.coin_handler = CoinHandlerSerial()
+        
+        print("[2/3] Initializing Bill Handler...")
+        self.bill_handler = PiBillHandler(serial_manager=self.coin_handler)
         
         print("[3/3] Registering Bill Dispenser (20 Peso)...")
         # Register dispenser as done in test_coin_to_bill_full.py

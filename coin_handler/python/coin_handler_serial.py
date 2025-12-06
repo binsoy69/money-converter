@@ -28,9 +28,12 @@ class CoinHandlerSerial:
         self._dispense_done_callbacks = [] # fn(denom, qty)
         self._error_callbacks = []         # fn(msg)
         self._reached_emitted = False
+        self._reached_emitted = False
         self._lock = threading.Lock()
 
-        # coin storage (persisted)
+        # Sorting synchronization
+        self._sort_event = threading.Event()
+        self._sort_success = False
         self.storage = CoinStorage()  # will persist to JSON
         self._reconnect_wait = 1.0  # start backoff
 
@@ -117,6 +120,34 @@ class CoinHandlerSerial:
         cmd = f"DISPENSE:{denom}:{qty}"
         self._send_command(cmd)
         print(f"[DEBUG] dispense command sent: {cmd}")
+
+    def send_sort_command(self, denom: int, timeout_s: float = 60.0) -> bool:
+        """
+        Send SORT:<denom> and wait for [OK] or Error from Arduino.
+        Replaces PiBillHandler's direct serial usage.
+        """
+        if not self.ser or not self.ser.is_open:
+            if not self.open():
+                print("[CoinHandlerSerial] sort failed: port not open")
+                return False
+            # start reader if not running
+            if not self._reader_thread or not self._reader_thread.is_alive():
+                self._reader_running = True
+                self._reader_thread = threading.Thread(target=self._reader_loop, daemon=True)
+                self._reader_thread.start()
+
+        self._sort_event.clear()
+        self._sort_success = False
+        
+        cmd = f"SORT:{denom}"
+        self._send_command(cmd)
+        
+        # Wait for event
+        if self._sort_event.wait(timeout=timeout_s):
+            return self._sort_success
+        else:
+            print(f"[CoinHandlerSerial] Sort timed out for denom {denom}")
+            return False
 
 
 
@@ -241,8 +272,27 @@ class CoinHandlerSerial:
         elif tag == "ERR":
             msg = ":".join(parts[1:])
             print("[CoinHandlerSerial] ERR from arduino:", msg)
+            # Check if it relates to sorting
+            if self._sort_event is not None and not self._sort_event.is_set():
+                self._sort_success = False
+                self._sort_event.set()
+                
             for cb in self._error_callbacks:
                 cb(msg)
+
+        # --- Handle Sorter/Motor messages (often plain text or diff tags) ---
+        elif "[OK]" in line or line.endswith("OK") or "sorter reply" in line:
+            # Sorter success indicator
+            print(f"[CoinHandlerSerial] Sorter msg: {line}")
+            if "[OK]" in line or line.endswith("OK"):
+                 self._sort_success = True
+                 self._sort_event.set()
+
+        elif "Error" in line:
+            print(f"[CoinHandlerSerial] Sorter Error: {line}")
+            if self._sort_event is not None and not self._sort_event.is_set():
+                self._sort_success = False
+                self._sort_event.set()
 
         else:
             # Unknown or debug message

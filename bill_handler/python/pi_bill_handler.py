@@ -244,6 +244,7 @@ class PiBillHandler:
         use_hardware: Optional[bool] = None,
         uv_model_path: Optional[str] = None,
         denom_model_path: Optional[str] = None,
+        serial_manager = None, # New shared serial manager (CoinHandlerSerial instance)
     ):
         self.ir_pin = ir_pin
         self.motor_forward_pin = motor_forward_pin
@@ -253,6 +254,7 @@ class PiBillHandler:
         self.sorter_serial_port = sorter_serial_port
         self.sorter_baud = sorter_baud
         self.speed = speed
+        self.serial_manager = serial_manager
 
         self.use_hardware = ON_RPI if use_hardware is None else use_hardware
 
@@ -279,9 +281,18 @@ class PiBillHandler:
         # Bill dispensers registry (denomination -> BillDispenser)
         self.dispensers: Dict[int, BillDispenser] = {}
 
-        # Serial sorter
+        # Serial sorter (Shared manager or individual)
+        self.serial_manager = None
         self.sorter_serial = None
-        self._open_sorter_serial()
+        
+        # NOTE: serial_manager logic is handled if passed later or we can add it to init now.
+        # But to avoid breaking existing signatures too much, we will handle it via setter or optional param.
+        # However, plan says modify init. Let's look at init again. It has many params. 
+        # I will add it as kwargs or just member variable injection if strictly following plan.
+        
+        # ACTUALLY, I will add it as a parameter to __init__ in the next chunk, so I'll just init it here.
+        # But wait, I need to prevent _open_sorter_serial if manager is used.
+
 
         # Storage
         self.storage = BillStorage()
@@ -383,6 +394,10 @@ class PiBillHandler:
     # Serial sorter
     # -------------------------
     def _open_sorter_serial(self, attempts: int = 3, delay_s: float = 1.0):
+        # If we have a manager, we don't need this.
+        if self.serial_manager:
+            return
+
         for attempt in range(attempts):
             try:
                 if serial is None:
@@ -398,6 +413,12 @@ class PiBillHandler:
 
     def sort_via_arduino(self, denom: int, timeout_s: float = 60.0) -> bool:
         """Send SORT command to Arduino (used only for bill acceptance, not dispensing)."""
+        
+        # 1. Use Shared Manager if valid
+        if self.serial_manager:
+            return self.serial_manager.send_sort_command(denom, timeout_s=timeout_s)
+
+        # 2. Fallback to individual serial
         cmd = f"SORT:{denom}\n"
         if self.sorter_serial is None:
             print("[PiBillHandler] sorter serial missing; assuming success (mock).")
