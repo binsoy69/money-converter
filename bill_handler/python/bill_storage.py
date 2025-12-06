@@ -1,4 +1,4 @@
-# workers/bill_storage.py
+
 import threading
 import json
 import os
@@ -6,7 +6,8 @@ from typing import Dict
 
 DEFAULT_DENOMS = [20, 50, 100, 200, 500, 1000]
 DEFAULT_COUNTS = {d: 20 for d in DEFAULT_DENOMS}
-DEFAULT_FILE = os.path.join(os.path.dirname(__file__), "bill_storage.json")
+# Go up two levels from this file to get to project root
+DEFAULT_FILE = "bill_storage.json"
 
 
 class BillStorage:
@@ -32,6 +33,7 @@ class BillStorage:
                 data = json.load(f)
             # convert keys to ints
             self._storage = {int(k): int(v) for k, v in data.items()}
+            print("[BillStorage] Storage loaded from file.")
             # ensure all default denoms exist
             for d in DEFAULT_DENOMS:
                 self._storage.setdefault(d, 0)

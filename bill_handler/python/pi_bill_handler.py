@@ -18,34 +18,7 @@ from typing import Optional, Tuple, Dict
 
 # --- GPIOZero setup ---
 try:
-    # Use pigpio factory to avoid SIGABRT conflicts with PyQt/OpenCV
-    # pigpio runs as a daemon and uses socket communication, avoiding signal conflicts
-    # Fallback chain: pigpio -> lgpio -> native
-    import os
-    if 'GPIOZERO_PIN_FACTORY' not in os.environ:
-        print("[PiBillHandler] Trying to use pigpio factory to prevent conflicts...")
-        os.environ['GPIOZERO_PIN_FACTORY'] = 'pigpio'
-
     from gpiozero import Motor, PWMOutputDevice, DigitalInputDevice, DigitalOutputDevice, LED, Device
-    
-    # Check if the factory initialized successfully
-    try:
-        # Try to create a test device to verify factory is working
-        if Device.pin_factory is None:
-            pass
-        print(f"[PiBillHandler] gpiozero available. Factory: {Device.pin_factory}")
-    except Exception as factory_error:
-        print(f"[PiBillHandler] Factory check failed: {factory_error}")
-        # Try fallback to lgpio
-        print("[PiBillHandler] Falling back to lgpio factory...")
-        os.environ['GPIOZERO_PIN_FACTORY'] = 'lgpio'
-        # Re-import to pick up new factory
-        import importlib
-        import gpiozero
-        importlib.reload(gpiozero)
-        from gpiozero import Motor, PWMOutputDevice, DigitalInputDevice, DigitalOutputDevice, LED, Device
-        print(f"[PiBillHandler] After lgpio fallback. Factory: {Device.pin_factory}")
-    
     ON_RPI = True
 except Exception as e:
     print(f"[PiBillHandler] gpiozero import failed or factory init failed: {e}")

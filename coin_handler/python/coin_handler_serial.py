@@ -33,7 +33,6 @@ class CoinHandlerSerial:
         # coin storage (persisted)
         self.storage = CoinStorage()  # will persist to JSON
         self._reconnect_wait = 1.0  # start backoff
-        print("debug")
 
     def add_callback(self, fn: Callable[[int, int, int], None]):
         self._callbacks.append(fn)
