@@ -337,7 +337,7 @@ class CoinnectTerminal:
             breakdown = convert_bill_to_coin(
                 amount=amount_to_dispense,
                 selected_denoms=selected_denoms,
-                coin_storage=coin_storage
+                storage=coin_storage
             )
             
             print(f"Coin Breakdown: {breakdown}")
