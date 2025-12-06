@@ -240,7 +240,7 @@ class PiBillHandler:
         white_led_pin: int = 27,
         sorter_serial_port: str = "/dev/ttyACM0",
         sorter_baud: int = 9600,
-        speed: float = 0.5,  # Motor speed (0.0–1.0)
+        speed: float = 0.4,  # Motor speed (0.0–1.0)
         use_hardware: Optional[bool] = None,
         uv_model_path: Optional[str] = None,
         denom_model_path: Optional[str] = None,
