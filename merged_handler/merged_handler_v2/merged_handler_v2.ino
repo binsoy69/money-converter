@@ -176,8 +176,8 @@ void setup_dispenser() {
   dispenser10.attach(DISPENSE_10_PIN);
   dispenser20.attach(DISPENSE_20_PIN);
   dispenser1.write(PUSH_ANGLE);
-  dispenser5.write(PUSH_ANGLE);
-  dispenser10.write(PUSH_ANGLE);
+  dispenser5.write(RESET_ANGLE);
+  dispenser10.write(RESET_ANGLE);
   dispenser20.write(PUSH_ANGLE);
 }
 
@@ -193,6 +193,30 @@ void dispenseCoin(Servo &s, int value, int count) {
       delay(DISPENSE_TIME);
     }
     for (int pos = RESET_ANGLE; pos <= PUSH_ANGLE; pos++) {
+      s.write(pos);
+      delay(DISPENSE_TIME);
+    }
+    delay(300);
+  }
+
+  Serial.print("DISPENSE_DONE:");
+  Serial.print(value);
+  Serial.print(":");
+  Serial.println(count);
+}
+
+void dispenseCoinReverse(Servo &s, int value, int count) {
+  Serial.print("ACK:DISPENSE:");
+  Serial.print(value);
+  Serial.print(":");
+  Serial.println(count);
+
+  for (int i = 0; i < count; i++) {
+    for (int pos = RESET_ANGLE; pos <= PUSH_ANGLE; pos++) {
+      s.write(pos);
+      delay(DISPENSE_TIME);
+    }
+    for (int pos = PUSH_ANGLE; pos >= RESET_ANGLE; pos--) {
       s.write(pos);
       delay(DISPENSE_TIME);
     }
@@ -240,8 +264,8 @@ void handle_serial_commands() {
       int qty   = cmd.substring(d2 + 1).toInt();
 
       if (denom == 1) dispenseCoin(dispenser1, 1, qty);
-      else if (denom == 5) dispenseCoin(dispenser5, 5, qty);
-      else if (denom == 10) dispenseCoin(dispenser10, 10, qty);
+      else if (denom == 5) dispenseCoinReverse(dispenser5, 5, qty);
+      else if (denom == 10) dispenseCoinReverse(dispenser10, 10, qty);
       else if (denom == 20) dispenseCoin(dispenser20, 20, qty);
       else Serial.println("ERR:Invalid coin denomination");
 
