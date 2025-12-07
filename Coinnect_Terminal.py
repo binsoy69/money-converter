@@ -235,11 +235,26 @@ class CoinnectTerminal:
             self.coin_handler.add_callback(self.on_coin_inserted)
             self.coin_handler.add_reached_callback(self.on_coins_finalized)
             
+            # Reset session counters to track this specific transaction
+            self.coin_handler.session_counts = {k: 0 for k in self.coin_handler.session_counts}
+            self.coin_handler.total_value = 0
+
             self.coin_handler.start_accepting(self.required_amount)
             
             if not self.coin_insertion_done.wait(timeout=COIN_INSERTION_TIMEOUT):
                 print("\n[TIMEOUT] Coin insertion timed out.")
                 self.coin_handler.stop_accepting()
+                
+                # Refund logic
+                if self.total_coin_inserted > 0:
+                    print(f"\n[REFUND] You inserted: {self.total_coin_inserted}")
+                    print("Returning your coins...")
+                    # Construct refund breakdown from session counts
+                    refund_breakdown = {k: v for k, v in self.coin_handler.session_counts.items() if v > 0}
+                    self.dispense_items(bill_breakdown={}, coin_breakdown=refund_breakdown)
+                else:
+                    print("\n[INFO] No coins inserted. Returning to menu.")
+                    
                 return
 
             self.coin_handler.stop_accepting()

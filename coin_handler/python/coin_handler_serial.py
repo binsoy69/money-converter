@@ -32,7 +32,7 @@ class CoinHandlerSerial:
         self._lock = threading.Lock()
 
         # Sorting synchronization
-        self._sort_event = threading.Event()
+        self._sort_event = threading.Event() 
         self._sort_success = False
         self.storage = CoinStorage()  # will persist to JSON
         self._reconnect_wait = 1.0  # start backoff
