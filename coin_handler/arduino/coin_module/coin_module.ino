@@ -22,8 +22,8 @@ const int RIGHT  = 117;
 
 // --- Dispenser Setup ---
 Servo dispenser1, dispenser5, dispenser10, dispenser20;
-const int DISPENSE_1_PIN  = 6;
-const int DISPENSE_5_PIN  = 11;
+const int DISPENSE_1_PIN  = 5;
+const int DISPENSE_5_PIN  = 6;
 const int DISPENSE_10_PIN = 7;
 const int DISPENSE_20_PIN = 8;
 const int PUSH_ANGLE = 180;
@@ -96,8 +96,8 @@ void setup_dispenser() {
 
   // Set initial position
   dispenser1.write(PUSH_ANGLE);
-  dispenser5.write(PUSH_ANGLE);
-  dispenser10.write(PUSH_ANGLE);
+  dispenser5.write(RESET_ANGLE);
+  dispenser10.write(RESET_ANGLE);
   dispenser20.write(PUSH_ANGLE);
 }
 

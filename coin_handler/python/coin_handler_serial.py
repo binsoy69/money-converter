@@ -280,6 +280,9 @@ class CoinHandlerSerial:
             for cb in self._error_callbacks:
                 cb(msg)
 
+        elif "HOMING" in tag or "READY" in tag:
+            print(f"[CoinHandlerSerial] System Status: {line}")
+
         # --- Handle Sorter/Motor messages (often plain text or diff tags) ---
         elif "[OK]" in line or line.endswith("OK") or "sorter reply" in line:
             # Sorter success indicator
