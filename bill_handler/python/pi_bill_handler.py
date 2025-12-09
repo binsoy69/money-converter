@@ -282,7 +282,7 @@ class PiBillHandler:
         self.dispensers: Dict[int, BillDispenser] = {}
 
         # Serial sorter (Shared manager or individual)
-        self.serial_manager = None
+
         self.sorter_serial = None
         
         # NOTE: serial_manager logic is handled if passed later or we can add it to init now.

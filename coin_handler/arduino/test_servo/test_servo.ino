@@ -4,7 +4,7 @@ Servo myServo;  // Create servo object
 
 void setup() {
   Serial.begin(9600);      // Start Serial Monitor
-  myServo.attach(4);       // Attach servo to pin D9
+  myServo.attach(2);       // Attach servo to pin D9
   Serial.println("Enter angle (0 to 180):");
 }
 

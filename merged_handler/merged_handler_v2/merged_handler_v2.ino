@@ -43,11 +43,11 @@ long currentSteps = 0;
 
 void goHome() {
   if (!homeSwitchEnabled) {
-    Serial.println("Homing switch currently disabled.");
+    //Serial.println("Homing switch currently disabled.");
     return;
   }
 
-  Serial.println("[Homing] Moving toward HOME...");
+ // Serial.println("[Homing] Moving toward HOME...");
 
   stepperX.setMaxSpeed(HORIZ_SPEED);
   stepperX.setSpeed(-HORIZ_SPEED);
@@ -68,8 +68,8 @@ void goHome() {
   stepperX.setCurrentPosition(0);
   isHomed = true;
   homeSwitchEnabled = false; // disable switch after homing
-  Serial.println("Homing complete. Current position set to 0.");
-  Serial.println("Homing switch disabled until next movement.");
+  //Serial.println("Homing complete. Current position set to 0.");
+  //Serial.println("Homing switch disabled until next movement.");
 }
 
 // ==================== MOVE TO BIN ====================
