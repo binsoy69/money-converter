@@ -78,6 +78,18 @@ class CoinnectTerminal:
             motor2_forward_pin=19, motor2_backward_pin=26, motor2_enable_pin=13, motor2_speed=1.0,
             ir_sensor_pin=12
         )
+        self.bill_handler.register_dispenser(
+            denomination=50,
+            motor1_forward_pin=9, motor1_backward_pin=11, motor1_enable_pin=10, motor1_speed=0.6,
+            motor2_forward_pin=8, motor2_backward_pin=7, motor2_enable_pin=25, motor2_speed=1.0,
+            ir_sensor_pin=5
+        )
+        self.bill_handler.register_dispenser(
+            denomination=100,
+            motor1_forward_pin=3, motor1_backward_pin=4, motor1_enable_pin=2, motor1_speed=0.6,
+            motor2_forward_pin=23, motor2_backward_pin=24, motor2_enable_pin=22, motor2_speed=1.0,
+            ir_sensor_pin=6
+        )
         
         # State tracking
         self.coin_insertion_done = threading.Event()
