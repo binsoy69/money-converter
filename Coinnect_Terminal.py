@@ -78,13 +78,13 @@ class CoinnectTerminal:
         print("[3/3] Registering Bill Dispenser (20 Peso)...")
         # Register dispenser as done in test_coin_to_bill_full.py
         self.bill_handler.register_dispenser(
-            denomination=50,
+            denomination=20,
             motor1_forward_pin=20, motor1_backward_pin=21, motor1_enable_pin=16, motor1_speed=0.6,
             motor2_forward_pin=19, motor2_backward_pin=26, motor2_enable_pin=13, motor2_speed=1.0,
             ir_sensor_pin=12
         )
         self.bill_handler.register_dispenser(
-            denomination=20,
+            denomination=50,
             motor1_forward_pin=14, motor1_backward_pin=15, motor1_enable_pin=10, motor1_speed=0.6,
             motor2_forward_pin=8, motor2_backward_pin=7, motor2_enable_pin=25, motor2_speed=1.0,
             ir_sensor_pin=5
