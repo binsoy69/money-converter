@@ -498,7 +498,7 @@ class PiBillHandler:
             print("[PiBillHandler] denom model missing; returning default 100 (mock).")
             return 100
         label, conf = self.run_inference(self.denom_model, frame, self.denom_labels)
-        if conf < 0.8:
+        if conf < 0.5:
             return None
         print(f"[Denom] {label} ({conf*100:.1f}%)")
         try:
