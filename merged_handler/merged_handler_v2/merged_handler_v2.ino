@@ -41,6 +41,8 @@ long currentSteps = 0;
 
 // ==================== HOMING (X-Axis) ====================
 
+// ==================== HOMING (X-Axis) ====================
+
 void goHome() {
   if (!homeSwitchEnabled) {
     //Serial.println("Homing switch currently disabled.");
@@ -68,31 +70,41 @@ void goHome() {
   stepperX.setCurrentPosition(0);
   isHomed = true;
   homeSwitchEnabled = false; // disable switch after homing
+  currentBinIndex = 0; // Reset bin index to HOME
   //Serial.println("Homing complete. Current position set to 0.");
   //Serial.println("Homing switch disabled until next movement.");
 }
 
 // ==================== MOVE TO BIN ====================
-void moveToBin(const Bin &bin) {
+void moveToBin(int binIndex) {
   if (!isHomed) {
     Serial.println("Please home first using command: h");
     return;
   }
 
+  // Optimization: If already at the target bin, do nothing
+  if (binIndex == currentBinIndex) {
+    Serial.println("[OK] Already at bin");
+    return;
+  }
+
+  Bin targetBin = bins[binIndex];
+
   Serial.print("[Moving] to bin: ");
-  Serial.print(bin.name);
+  Serial.print(targetBin.name);
   Serial.print(" (Steps: ");
-  Serial.print(bin.stepPos);
+  Serial.print(targetBin.stepPos);
   Serial.println(")");
 
   stepperX.setMaxSpeed(HORIZ_SPEED);
   stepperX.setAcceleration(ACCEL);
-  stepperX.moveTo(bin.stepPos);
+  stepperX.moveTo(targetBin.stepPos);
 
   while (stepperX.distanceToGo() != 0) {
     stepperX.run();
   }
 
+  currentBinIndex = binIndex; // Update current bin index
   Serial.println("Movement complete.");
 
   // Re-enable homing switch after a move
@@ -275,14 +287,18 @@ void handle_serial_commands() {
 
     } else if (cmd.startsWith("SORT:")) {
       String denom = cmd.substring(5);
+      bool found = false;
       for (int i = 0; i < NUM_BINS; i++) {
         if (String(bins[i].name) == denom) {
-          moveToBin(bins[i]);
+          moveToBin(i); // Pass index instead of struct
           Serial.println("[OK]");
-          return;
+          found = true;
+          break;
         }
       }
-      Serial.println("[Error] Unknown bill denom");
+      if (!found) {
+        Serial.println("[Error] Unknown bill denom");
+      }
 
     } else {
       Serial.print("ERR:Unknown command ");
