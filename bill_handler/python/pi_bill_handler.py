@@ -513,7 +513,7 @@ class PiBillHandler:
     def accept_bill(
         self,
         required_denom: int,
-        motor_forward_ms: int = 400,
+        motor_forward_ms: int = 500,
         motor_reverse_ms: int = 1000,
         push_after_sort_ms: int = 1500,
         wait_for_ir_timeout_s: int = 60,
@@ -527,7 +527,7 @@ class PiBillHandler:
         else:
             return False, None, "timeout_no_bill"
         print("Bill Inserted")
-        time.sleep(1)
+        time.sleep(1.5)
         self.motor_forward()
         time.sleep(motor_forward_ms / 1000.0)
         self.motor_stop()
