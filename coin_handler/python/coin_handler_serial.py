@@ -156,11 +156,12 @@ class CoinHandlerSerial:
             if not self.open():
                 print("[CoinHandlerSerial] sort failed: port not open")
                 return False
-            # start reader if not running
-            if not self._reader_thread or not self._reader_thread.is_alive():
-                self._reader_running = True
-                self._reader_thread = threading.Thread(target=self._reader_loop, daemon=True)
-                self._reader_thread.start()
+
+        # Ensure reader is running (crucial since we might have stopped it or init didn't start it)
+        if not self._reader_thread or not self._reader_thread.is_alive():
+            self._reader_running = True
+            self._reader_thread = threading.Thread(target=self._reader_loop, daemon=True)
+            self._reader_thread.start()
 
         self._sort_event.clear()
         self._sort_success = False
