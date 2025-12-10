@@ -459,6 +459,10 @@ class CoinnectTerminal:
         self.coin_insertion_done.clear()
         self.total_coin_inserted = 0
         
+        # Reset coin handler state
+        self.coin_handler.session_counts = {k: 0 for k in self.coin_handler.session_counts}
+        self.coin_handler.total_value = 0
+        
         self.coin_handler.add_callback(self.on_coin_inserted)
         self.coin_handler.add_reached_callback(self.on_coins_finalized)
         

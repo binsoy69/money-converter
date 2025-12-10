@@ -78,23 +78,23 @@ void goHome() {
 // ==================== MOVE TO BIN ====================
 void moveToBin(int binIndex) {
   if (!isHomed) {
-    Serial.println("Please home first using command: h");
+    //Serial.println("Please home first using command: h");
     return;
   }
 
   // Optimization: If already at the target bin, do nothing
   if (binIndex == currentBinIndex) {
-    Serial.println("[OK] Already at bin");
+    //Serial.println("[OK] Already at bin");
     return;
   }
 
   Bin targetBin = bins[binIndex];
 
-  Serial.print("[Moving] to bin: ");
+  //Serial.print("[Moving] to bin: ");
   Serial.print(targetBin.name);
-  Serial.print(" (Steps: ");
+  //Serial.print(" (Steps: ");
   Serial.print(targetBin.stepPos);
-  Serial.println(")");
+  //Serial.println(")");
 
   stepperX.setMaxSpeed(HORIZ_SPEED);
   stepperX.setAcceleration(ACCEL);
@@ -105,12 +105,12 @@ void moveToBin(int binIndex) {
   }
 
   currentBinIndex = binIndex; // Update current bin index
-  Serial.println("Movement complete.");
+  //Serial.println("Movement complete.");
 
   // Re-enable homing switch after a move
   if (!homeSwitchEnabled) {
     homeSwitchEnabled = true;
-    Serial.println("Homing switch re-enabled for next homing command.");
+    //Serial.println("Homing switch re-enabled for next homing command.");
   }
 }
 
