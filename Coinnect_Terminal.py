@@ -66,6 +66,11 @@ class CoinnectTerminal:
         # Initialize handlers
         print("\n[1/3] Initializing Coin Handler (and Shared Serial)...")
         self.coin_handler = CoinHandlerSerial()
+        # Explicitly open connection once at startup
+        if self.coin_handler.open():
+             print("[CoinnectTerminal] Coin Handler Serial Opened Successfully.")
+        else:
+             print("[CoinnectTerminal] WARNING: Failed to open Coin Handler Serial.")
         
         print("[2/3] Initializing Bill Handler...")
         self.bill_handler = PiBillHandler(serial_manager=self.coin_handler)
@@ -97,7 +102,7 @@ class CoinnectTerminal:
     def cleanup(self):
         print("\n[CLEANUP] Cleaning up handlers...")
         try:
-            self.coin_handler.stop_accepting()
+            self.coin_handler.shutdown()
         except:
             pass
         self.bill_handler.cleanup()

@@ -55,6 +55,9 @@ class CoinHandlerSerial:
 
     # ----- Serial open/close/reconnect -----
     def open(self):
+        if self.ser and self.ser.is_open:
+            return True
+
         try:
             self.ser = serial.Serial(self.port, self.baud, timeout=1)
             # give Arduino time to reset on open
@@ -68,16 +71,23 @@ class CoinHandlerSerial:
             return False
 
     def close(self):
+        """Internal close (or force close)."""
         try:
             if self.ser and self.ser.is_open:
                 self.ser.close()
             self.ser = None
         except Exception as e:
             print("[CoinHandlerSerial] close error:", e)
+            
+    def shutdown(self):
+        """Explicitly stop everything and close the port."""
+        self._running = False
+        self._reader_running = False
+        self.close()
 
     # ----- Control functions -----
     def start_accepting(self, required_amount):
-        """Open port and start reader thread; send ENABLE_COIN."""
+        """Open port (if needed) and start reader thread; send ENABLE_COIN."""
         self._running = True
 
         # reset reached flag for a fresh session
@@ -96,14 +106,30 @@ class CoinHandlerSerial:
             self._reader_thread.start()
 
     def stop_accepting(self):
-        """Send DISABLE_COIN and stop reader loop."""
-        # Send disable, but keep thread to listen for ACK if desired
+        """Send DISABLE_COIN and stop reader loop logic (but keep port open)."""
+        # Send disable
         self._send_command("DISABLE_COIN")
         self._running = False
-        self._reader_running = False
-        # close serial after small delay to allow ACK
-        time.sleep(0.2)
-        self.close()
+        # Do NOT close port here anymore!
+        # Do NOT stop reader thread completely if we want to read other messages (e.g. from bill handler)?
+        # Actually, if we stop reader, we can't read sort replies.
+        # So we should probably keep reader running if we expect shared usage.
+        
+        # However, start_accepting restart the reader if needed.
+        # If we want persistent connection for PiBillHandler (sorting), we need the reader to stay alive 
+        # OR we need start_transport/sort to ensure reader is running.
+        # PiBillHandler uses `sort_via_arduino` which calls `send_sort_command` in CoinHandlerSerial.
+        # `send_sort_command` checks if reader is alive and starts it.
+        
+        # So it is safe to stop reader_running flag here IF `send_sort_command` restarts it.
+        # But `send_sort_command` sets `self._reader_running = True`.
+        
+        # Let's just set _running to False (which controls reconnect loop, if any uses it? No, reconnect_loop uses _running).
+        # And we normally want DISABLE_COIN.
+        
+        # NOTE: If we stop reader here, we might miss ACKs if they come late?
+        # But we previously waited 0.2s then closed.
+        pass
 
     def dispense(self, denom: int, qty: int = 1):
         # Ensure serial is open
